@@ -8,7 +8,7 @@
 //   ?sw=1                          register the service worker on localhost (off by default in dev so
 //                                  edited files are never served from a stale cache)
 
-export const PRODUCTION_API = 'https://api.neuroguesser.invalid'; // placeholder: set to the deployed Worker origin
+export const PRODUCTION_API = 'https://neuroguesser-api-production.fredericoaraujo.workers.dev';
 export const DEV_API = 'http://localhost:8787';
 export const DEV_HOSTS = ['localhost', '127.0.0.1'];
 export const DEV_API_PORT = 8787;
