@@ -1,0 +1,211 @@
+/* NeuroGuesser · EM format 2 viewer (js/viewer/em2/*; em-v2-spec.md §8.4, §8.9; track: viewers).
+   Loaded by js/viewer/em2/stage.js with loadCss('css/em2.css').
+   Charcoal: the EM is exact greyscale on surface-sunken; data colours only inside the panels (orange outline and 3D
+   mesh, data-black footprint, axis colours: x purple, y green, z blue), accent for the section line, the stack frame,
+   the lens and the active tab. Chips carry a word and a glyph; hit targets ≥ 44 px; radius 0 inside the data area,
+   4 for chips, 8 for the rail and buttons, 12 for the shortcuts dialog (shadow-raised: it is the only sheet here). */
+
+/* ---------- the stage (canvas + overlay + data-area labels), moved between hosts ---------- */
+.em2-root {
+  position: absolute; inset: 0;
+  overflow: hidden;
+  background: var(--surface-sunken);
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+  cursor: grab;
+}
+.em2-root:active { cursor: grabbing; }
+.em2-root:focus { outline: none; }
+.em2-root:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.em2-gl, .em2-over { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.em2-over { pointer-events: none; }
+.em2-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.em2-tag {
+  position: absolute; left: 0; top: 0;
+  padding: 0 4px;
+  white-space: nowrap;
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink);
+  background: var(--surface-sunken);
+}
+.em2-tag.is-stack { color: var(--accent); margin-top: -2px; }
+.em2-tag.is-loading { color: var(--ink-muted); }
+.em2-tag.is-lens { font-family: var(--font-mono); color: var(--accent); }
+.em2-status {
+  position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-50%);
+  text-align: center; pointer-events: none;
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); text-transform: uppercase; color: var(--state-warn);
+}
+
+/* ---------- the chrome around it (view.js) ---------- */
+.em2-view { position: absolute; inset: 0; overflow: hidden; }
+.em2-host, .em2-layer { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
+.em2-layer { pointer-events: none; }
+/* inline (method stage): between the top row ("#33 · 2/5", the points) and the tabs */
+.em2-view.is-inline .em2-host, .em2-view.is-inline .em2-layer { top: calc(var(--safe-top) + 44px); bottom: 66px; }
+.em2-view.is-inline.is-quad .em2-host, .em2-view.is-inline.is-quad .em2-layer { bottom: 0; }
+.em2-chrome { position: absolute; pointer-events: none; }
+.em2-chrome button, .em2-chrome [role="slider"], .em2-plabel button { pointer-events: auto; }
+.em2-chrome-in { position: absolute; inset: 0; }
+/* full view: the whole window; the chrome keeps clear of the top row (✕, 3D | EM), the tabs and the safe areas */
+.em2-view.is-full .em2-chrome-in { top: calc(var(--safe-top) + 52px); right: var(--safe-right); left: var(--safe-left); bottom: var(--safe-bottom); }
+.em2-view.is-full.is-single .em2-chrome-in { bottom: calc(72px + var(--safe-bottom)); }
+.em2-view.is-full .em2-plabel.is-top { margin-top: calc(var(--safe-top) + 56px); }
+.em2-view.is-bare .em2-layer, .em2-view.is-bare .em2-tabs { display: none; }
+
+.em2-progress { position: absolute; left: 0; right: 0; top: 0; height: 2px; overflow: hidden; }
+.em2-progress > i { display: block; height: 100%; background: var(--accent); transform-origin: left center; transition: transform var(--dur-fast) linear; }
+
+/* chips: "— Outline", "◇ Mesh" (3D: "◇ Mesh", ■ XY · XZ · YZ) — 28 px drawn, 44 px hit area */
+.em2-chips { position: absolute; left: 8px; top: 6px; display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 140px); }
+.em2-view.is-quad .em2-chips { top: 40px; }
+.em2-chip {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 28px; padding: 0 8px;
+  background: var(--surface-sunken); border: 0; border-radius: var(--radius-sm);
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink);
+  white-space: nowrap;
+}
+.em2-chip::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+.em2-chip.is-off { color: var(--ink-muted); }
+.em2-chip:disabled { color: var(--slate-500); }
+.em2-chip-glyph { color: var(--ink-muted); }
+.em2-chip.is-outline .em2-chip-glyph { color: var(--data-orange); }
+.em2-chip.is-mesh .em2-chip-glyph { color: var(--data-black); }
+.em2-chip.is-mesh3d .em2-chip-glyph { color: var(--data-orange); }
+.em2-chip.is-z .em2-chip-glyph { color: var(--data-blue); }
+.em2-chip.is-y .em2-chip-glyph { color: var(--data-green); }
+.em2-chip.is-x .em2-chip-glyph { color: var(--data-purple); }
+.em2-chip.is-off .em2-chip-glyph { color: var(--slate-500); }
+.em2-chip-off { color: var(--ink-muted); }
+
+/* the readout under the points: "8 nm px · finest" (mono) */
+.em2-read {
+  position: absolute; right: 8px; top: 6px;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 0;
+  padding: 2px 6px;
+  background: var(--surface-sunken); border-radius: var(--radius-sm);
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--slate-300);
+  white-space: nowrap;
+  pointer-events: none;
+}
+/* quad: the panel label owns the top row; the readout sits above the scale bar */
+.em2-view.is-quad .em2-read { top: auto; bottom: 46px; left: 8px; right: auto; align-items: flex-start; }
+.em2-read-load { color: var(--accent); }
+
+/* the z rail: right edge, 44 px column */
+.em2-rail {
+  position: absolute; right: 8px; top: 36px; bottom: 56px;
+  width: 44px;
+  display: flex; flex-direction: column; align-items: center;
+  background: var(--surface-sunken); border-radius: var(--radius-md);
+}
+.em2-rail-btn { flex: none; color: var(--slate-300); }
+.em2-rail-btn:disabled { color: var(--slate-600); }
+.em2-track { position: relative; flex: 1 1 auto; width: 44px; min-height: 40px; cursor: ns-resize; touch-action: none; }
+.em2-track:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.em2-track-line { position: absolute; left: 50%; top: 8px; bottom: 8px; width: 1px; background: var(--slate-500); }
+.em2-tick { position: absolute; left: calc(50% - 5px); width: 10px; height: 5px; margin-top: -2px; border: 1px solid var(--ink-muted); }
+.em2-thumb { position: absolute; left: calc(50% - 7px); width: 15px; height: 5px; margin-top: -2px; background: var(--ink); }
+.em2-thumb.is-lost { background: var(--surface-sunken); border: 1px solid var(--ink); }
+.em2-z { flex: none; padding: 0 0 6px; font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--slate-300); white-space: nowrap; }
+.em2-chrome.is-3d .em2-rail { top: 36px; }
+
+/* bottom row: scale bar left; ⊞, "Whole cell" ⇄ "Native" / Reset right (the round's ⤢ sits right of them) */
+.em2-bottom {
+  position: absolute; left: 8px; right: 8px; bottom: 6px;
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 8px;
+}
+.em2-scale {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 8px;
+  background: var(--surface-sunken); border-radius: var(--radius-sm);
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink);
+  white-space: nowrap; pointer-events: none;
+}
+.em2-scale > i { display: block; height: 2px; background: var(--ink); }
+.em2-bottom-right { display: flex; align-items: center; gap: 6px; }
+.em2-view.is-inline .em2-bottom-right { margin-right: 50px; }   /* the round's ⤢ */
+.em2-text-btn {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 32px; min-width: 32px; padding: 0 10px;
+  background: var(--surface-sunken); border: 0; border-radius: var(--radius-md);
+  font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); color: var(--ink);
+  white-space: nowrap;
+}
+.em2-text-btn::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+.em2-text-btn:focus-visible, .em2-chip:focus-visible, .em2-max:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.em2-note, .em2-hint {
+  position: absolute; left: 50%; bottom: 52px; transform: translateX(-50%);
+  max-width: calc(100% - 120px);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+}
+/* quad: the readout sits above the scale bar (bottom 46 px, up to two lines): keep the hint and the note clear of it */
+.em2-view.is-quad .em2-note, .em2-view.is-quad .em2-hint { bottom: 92px; }
+.em2-note { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--accent); background: var(--surface-sunken); white-space: nowrap; }
+.em2-hint { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink); background: var(--scrim-strong); text-align: center; animation: em2-hint-in 220ms var(--ease-out) both; }
+@keyframes em2-hint-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* tabs (single layout): XY Sections · XZ Side · YZ Side · 3D */
+.em2-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.em2-view.is-full .em2-tabs { bottom: calc(10px + var(--safe-bottom)); left: calc(12px + var(--safe-left)); right: calc(12px + var(--safe-right)); background: var(--scrim-strong); }
+
+/* quad: each panel's label (6 px swatch of its normal-axis colour) + ⤢ maximize */
+.em2-plabel {
+  position: absolute;
+  display: flex; align-items: center; gap: 2px;
+  margin: 6px 0 0 8px; padding: 0 0 0 6px;
+  background: var(--surface-sunken); border-radius: var(--radius-sm);
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--slate-300);
+  pointer-events: none;
+}
+.em2-plabel.is-focus { color: var(--ink); }
+.em2-plabel-name { display: inline-flex; align-items: center; }
+.em2-sw { display: inline-block; width: 6px; height: 6px; margin-right: 6px; }
+.em2-sw.is-z { background: var(--data-blue); }
+.em2-sw.is-y { background: var(--data-green); }
+.em2-sw.is-x { background: var(--data-purple); }
+.em2-sw.is-mesh { border: 1px solid var(--data-orange); }
+.em2-max {
+  position: relative;
+  width: 28px; height: 28px; padding: 0;
+  background: transparent; border: 0;
+  font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); color: var(--slate-300);
+}
+.em2-max::after { content: ""; position: absolute; inset: -8px; }
+.em2-view.is-inline.is-quad .em2-plabel { margin-top: 6px; }
+
+/* the shortcuts dialog (? / h) */
+.em2-help {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  z-index: 3;
+  width: min(440px, calc(100% - 32px)); max-height: calc(100% - 32px); overflow: auto;
+  padding: 8px 16px 16px;
+  background: var(--surface-panel); border: 1px solid var(--hairline); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+}
+.em2-help:focus { outline: none; }
+.em2-help-head { display: flex; justify-content: space-between; align-items: center; }
+.em2-help-list { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.em2-help-list > div { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 12px; }
+.em2-help-list dt { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--ink); }
+.em2-help-list dd { margin: 0; font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--slate-300); }
+
+/* the "update the app" state and load errors */
+.em2-update {
+  position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  text-align: center;
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); text-transform: uppercase; color: var(--ink-muted);
+}
+.em2-update .btn-text { text-transform: none; font-family: var(--font-sans); }
+
+/* round screen (method stage): the ⤢ full view moves to the bottom-right, beside "Whole cell" ⇄ "Native" */
+.round-viewer.is-em2 .viewer-expand { top: auto; bottom: 72px; }
+.round-viewer.is-em2 .viewer-expand .btn-ghost { background: var(--surface-sunken); border-radius: var(--radius-md); }
+.round-viewer.is-em2:has(.em2-view.is-quad) .viewer-expand { bottom: 8px; }

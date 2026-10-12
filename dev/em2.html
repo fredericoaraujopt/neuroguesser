@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" data-theme="app-dark">
+<head>
+<meta charset="utf-8">
+<!-- every relative URL (import map, loadCss('css/…'), module src) resolves from the app root, like index.html -->
+<base href="../">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NeuroGuesser · EM format 2 viewer</title>
+<meta name="theme-color" content="#1c222b">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/desktop.css">
+<link rel="stylesheet" href="css/round.css">
+<link rel="stylesheet" href="css/viewer.css">
+<script type="importmap">{"imports":{
+  "preact":"./vendor/preact/preact.module.js",
+  "preact/hooks":"./vendor/preact/hooks.module.js",
+  "htm":"./vendor/htm/htm.module.js",
+  "three":"./vendor/three/three.module.min.js",
+  "three/addons/":"./vendor/three/addons/"}}</script>
+<style>
+  html, body { height: 100%; overflow: hidden; }
+  body { background: var(--surface-canvas); }
+  .dv2 { position: absolute; inset: 0; display: flex; flex-direction: column; }
+  .dv2-bar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 6px 12px; border-bottom: 1px solid var(--hairline); font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--slate-300); }
+  .dv2-bar label { display: inline-flex; align-items: center; gap: 4px; }
+  .dv2-bar button { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--ink); background: var(--surface-panel); border: 1px solid var(--hairline); border-radius: var(--radius-sm); padding: 2px 8px; }
+  .dv2-stats { color: var(--accent); }
+  .dv2-stage { position: relative; flex: 1 1 auto; min-height: 0; }
+  .dv2-frame { position: absolute; left: 0; top: 0; overflow: hidden; background: var(--surface-sunken); }
+  .dv2-frame .viewer { height: 100%; }
+  .dv2-note { position: absolute; left: 16px; top: 16px; max-width: 560px; font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); color: var(--ink-muted); }
+  body.is-bare .dv2-bar { display: none; }
+</style>
+</head>
+<body>
+<div id="dev"></div>
+<div id="fx-layer" aria-hidden="true"></div>
+<script type="module" src="dev/em2.js"></script>
+</body>
+</html>

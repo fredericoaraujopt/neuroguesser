@@ -1,0 +1,184 @@
+/* NeuroGuesser · viewers (MeshViewer, EmViewer, GraphView) + the full specimen view (track: viewers).
+   Loaded by js/viewer/*.js and js/screens/fullview.js with loadCss('css/viewer.css').
+   Charcoal: data-* colours only inside data areas (and their legend keys); chrome is ink / accent; radii 0 in data
+   areas, 8 for chrome panels; focus ring 2 px accent; every state colour + word/glyph; transform/opacity motion
+   only, none under prefers-reduced-motion (.is-still = Settings → Celebrations off). */
+
+/* ---------- MeshViewer / EmViewer surfaces (fill the container the screen owns; it must be positioned) ---------- */
+.mv-root, .em-root {
+  position: absolute; inset: 0;
+  overflow: hidden;
+  background: var(--surface-sunken);
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
+  cursor: grab;
+}
+.mv-root:active, .em-root:active { cursor: grabbing; }
+.mv-root:focus-visible, .em-root:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.mv-root > canvas, .em-root > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.mv-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.mv-label {
+  position: absolute; left: 0; top: 0;
+  padding: 3px 0 0 6px;               /* sits just inside its band, right of the plane corner */
+  /* one-line label: line height 1.25 keeps the box at 14 px with the 11 px micro step (15 with 12 on a laptop), so
+     close layer planes (L1 / L2/3 on a phone) still both fit the collision pass instead of one hiding */
+  font: 400 var(--fs-micro)/var(--lh-card) var(--font-sans); color: var(--ink);
+  white-space: nowrap;
+  will-change: transform;
+  /* sunken keyline under the glyphs (stroke painted first): a label stays legible where it crosses today's
+     white cell or a bright part of the volume; invisible on the plain sunken ground */
+  paint-order: stroke fill; -webkit-text-stroke: 2px var(--surface-sunken);
+}
+.mv-label.is-point { padding: 0; margin: -7px 0 0 -2px; color: var(--slate-300); display: flex; align-items: center; gap: 4px; }
+.mv-label.is-point::before { content: ""; width: 3px; height: 3px; background: var(--slate-300); }
+/* collision pass (mesh-viewer layoutLabels): a point label that would overlap a nearer one sits left of its dot */
+.mv-label.is-point.is-left { flex-direction: row-reverse; }
+/* today's cell in context, when it is too small to see: the soma as a 7 px data-black dot */
+.mv-soma {
+  position: absolute; left: -4.5px; top: -4.5px; width: 9px; height: 9px;
+  border-radius: 50%; background: var(--data-black);
+  border: 1px solid var(--surface-sunken);   /* keyline so the dot reads over the sky siblings */
+}
+.mv-status {
+  position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-50%);
+  text-align: center; pointer-events: none;
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); text-transform: uppercase; color: var(--ink-muted);
+}
+.mv-status.is-loading { animation: mv-breathe 1.2s ease-in-out infinite alternate; }
+@keyframes mv-breathe { from { opacity: 0.45; } to { opacity: 1; } }
+
+/* Chrome over an EM image (inline viewers too): EM can be bright, so overlays sit on a scrim panel. */
+.on-em { background: var(--scrim-strong); border-radius: var(--radius-md); padding: 2px 6px; color: var(--ink); }
+
+/* ---------- GraphView (SVG) ---------- */
+/* the SVG's font size is the on-screen text size GraphView scales its 10 px layout to (--fs-graph, a token) */
+.gv { display: block; overflow: visible; font-family: var(--font-sans); font-size: var(--fs-graph); }
+.gv text { font: 400 var(--fs-fig-graph)/var(--lh-micro) var(--font-sans); fill: var(--ink); }
+.gv .gv-num { font-family: var(--font-mono); fill: var(--ink-muted); }
+.gv .gv-head { font-family: var(--font-mono); fill: var(--ink-muted); }
+.gv .gv-empty, .gv .gv-micro { fill: var(--ink-muted); }
+/* labels sit over the edges (drawn last); a 3 px sunken halo keeps them legible where an edge passes behind
+   (GraphView only renders on sunken: the round viewer and the reveal's sunken panel) */
+.gv .gv-label, .gv .gv-num, .gv .gv-micro {
+  paint-order: stroke; stroke: var(--surface-sunken); stroke-width: 3px; stroke-linejoin: round;
+}
+.gv-key .gv-micro { stroke: none; }
+.gv-fade { animation: gv-in 280ms var(--ease-out) both; }
+@keyframes gv-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- full specimen view (handoff screen 2) ---------- */
+.fv { overflow: hidden; touch-action: none; }
+.fv-enter { animation: fv-in 180ms var(--ease-out) both; }
+@keyframes fv-in { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: none; } }
+.fv-stage { position: absolute; inset: 0; }
+.fv-status {
+  position: absolute; left: 24px; right: 24px; top: 50%; transform: translateY(-50%);
+  text-align: center; pointer-events: none;
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); text-transform: uppercase; color: var(--state-warn);
+}
+.fv-chrome { transition: opacity var(--dur-fast) linear; }
+.fv-chrome.is-hidden { opacity: 0; pointer-events: none; }
+.fv-chrome.is-hidden * { pointer-events: none !important; }
+
+.fv-top {
+  position: absolute; z-index: 2;
+  left: calc(8px + var(--safe-left)); right: calc(12px + var(--safe-right)); top: calc(4px + var(--safe-top));
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+}
+.fv-top-left { display: flex; align-items: center; gap: 4px; }
+.fv .text-switch > button { height: 44px; }
+.fv-sub {
+  position: absolute; z-index: 2;
+  right: calc(12px + var(--safe-right)); top: calc(48px + var(--safe-top));
+}
+
+.fv-col {
+  position: absolute; z-index: 2;
+  right: calc(8px + var(--safe-right)); bottom: calc(20px + var(--safe-bottom));
+  display: flex; flex-direction: column; align-items: center;
+}
+.fv-info {
+  position: absolute; z-index: 2;
+  left: calc(16px + var(--safe-left)); bottom: calc(28px + var(--safe-bottom));
+  max-width: calc(100% - 96px);
+  display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--slate-300);
+  pointer-events: none;
+}
+.fv-info.has-toggles { bottom: calc(76px + var(--safe-bottom)); }
+.fv-info .legend { gap: 5px; }
+.legend .key-line.is-sky { background: var(--data-sky); }
+.fv-scale { display: flex; align-items: center; gap: 8px; padding-top: 6px; color: inherit; }   /* slate-300 label (handoff) */
+.fv-mode-em .fv-scale { color: var(--ink); }
+.fv-ng { font-size: var(--fs-body); text-decoration: none; }   /* handoff: ↗ at 13 px */
+.fv-ng:hover { text-decoration: none; }
+.fv-scale > i { display: block; height: 2px; background: var(--ink); }
+.fv-read { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--ink-muted); }
+.fv-key-btn {
+  pointer-events: auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 44px; margin: -12px 0 -8px -6px; padding: 0 6px;
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink);
+}
+.fv-key-btn[aria-pressed="false"] { color: var(--ink-muted); }
+.key-mask {
+  width: 10px; height: 7px;
+  background: color-mix(in srgb, var(--data-orange) 32%, transparent);
+  border: 1px solid var(--data-orange);
+}
+.key-mask.is-off { background: transparent; border-color: var(--slate-500); }
+
+.fv-toggles {
+  position: absolute; z-index: 2;
+  left: calc(16px + var(--safe-left)); right: calc(60px + var(--safe-right)); bottom: calc(16px + var(--safe-bottom));
+}
+.fv-toggles > button { height: 44px; min-width: 0; padding: 0 4px; flex: 1 1 auto; } /* long sibling type names take the room "✓ Volume" doesn't need */
+/* only the type name (it has the ellipsis) gives way: on phones "✓ Volume" / "✓ Regions" would otherwise shrink below
+   their labels and run into the next toggle ("✓ Volume✓ Molecular…" at 390 px) */
+.fv-toggles > button:not(:has(> .fv-ellipsis)) { flex-shrink: 0; }
+.fv-ellipsis { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* EM z-stack slider: 1 px track, 12 × 24 ink thumb, ▲/▼ ±10 slices, mono readout */
+.fv-z {
+  position: absolute; z-index: 2;
+  right: calc(6px + var(--safe-right)); top: calc(156px + var(--safe-top));
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.fv-z-track {
+  position: relative; width: 44px;
+  height: clamp(96px, calc(100dvh - 470px), 220px);
+  cursor: ns-resize; touch-action: none;
+}
+.fv-z-track:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fv-z-line { position: absolute; left: 21px; top: 0; bottom: 0; width: 1px; background: var(--ink-muted); }
+.fv-z-thumb { position: absolute; left: 16px; width: 12px; height: 24px; background: var(--ink); border-radius: var(--radius-sm); }
+.fv-z-read { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--ink); padding: 0 2px 4px; white-space: nowrap; }
+
+/* EM can be bright: the chrome sits on a scrim (accent-ink @70 %) and its glyphs step up one ink level so they
+   stay legible on any micrograph; 3D sits on sunken and needs neither. */
+.fv-mode-em .fv-top-left, .fv-mode-em .fv-top .text-switch, .fv-mode-em .fv-sub,
+.fv-mode-em .fv-col, .fv-mode-em .fv-z {
+  background: var(--scrim-strong); border-radius: var(--radius-md);
+}
+.fv-mode-em .fv-info { background: var(--scrim-strong); border-radius: var(--radius-md); padding: 6px 8px; margin: 0 0 0 -8px; }
+.fv-mode-em .btn-ghost { color: var(--ink); }
+.fv-mode-em .text-switch > button { color: var(--slate-300); }
+.fv-mode-em .text-switch > button.is-active { color: var(--ink); }
+.fv-mode-em .fv-read { color: var(--slate-300); }
+.fv-mode-em .fv-z-line { background: var(--slate-300); }
+.fv-mode-em .fv-top { left: calc(12px + var(--safe-left)); }
+.fv-mode-em .fv-key-btn { margin: -10px 0 -6px -6px; }
+
+.fv-hint {
+  position: absolute; left: 0; right: 0; bottom: calc(24px + var(--safe-bottom));
+  text-align: center; pointer-events: none;
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted);
+}
+.fv-hint > span { padding: 4px 8px; border-radius: var(--radius-sm); }
+.fv-mode-em .fv-hint > span { background: var(--scrim-strong); color: var(--slate-300); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fv-enter, .gv-fade, .mv-status.is-loading { animation: none; }
+  .fv-chrome { transition: none; }
+}
+.is-still .fv-chrome { transition: none; }

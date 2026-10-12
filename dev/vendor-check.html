@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en" data-theme="app-dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NeuroGuesser · vendor check</title>
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/app.css">
+<script type="importmap">{"imports":{
+  "preact":"../vendor/preact/preact.module.js",
+  "preact/hooks":"../vendor/preact/hooks.module.js",
+  "htm":"../vendor/htm/htm.module.js",
+  "three":"../vendor/three/three.module.min.js",
+  "three/addons/":"../vendor/three/addons/"}}</script>
+<style>
+  body { padding: 16px; }
+  .wrap { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+  #scene { height: 220px; position: relative; background: var(--surface-sunken); }
+  li { font: 400 11px/1.6 var(--font-mono); list-style: none; }
+  ul { padding: 0; margin: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="overline">Dev · vendored modules</span>
+  <span class="t-title">Vendor check</span>
+  <span class="t-body t-soft">Imports every vendored ES module through the import map and renders a test mesh with js/viewer/three-common.js.</span>
+  <ul id="list"></ul>
+  <div id="scene"></div>
+  <span id="status" class="t-num-13">running…</span>
+</div>
+<script type="module">
+const specs = [
+  'preact', 'preact/hooks', 'htm', 'three',
+  'three/addons/loaders/GLTFLoader.js', 'three/addons/utils/BufferGeometryUtils.js', 'three/addons/utils/SkeletonUtils.js',
+  'three/addons/lines/Line2.js', 'three/addons/lines/LineGeometry.js', 'three/addons/lines/LineMaterial.js',
+  'three/addons/lines/LineSegments2.js', 'three/addons/lines/LineSegmentsGeometry.js',
+  'three/addons/libs/meshopt_decoder.module.js',
+  '../js/viewer/three-common.js', '../js/ui/html.js', '../js/fx/celebrate.js',
+];
+const list = document.getElementById('list');
+const results = {};
+for (const s of specs) {
+  const li = document.createElement('li');
+  try {
+    const m = await import(s);
+    results[s] = Object.keys(m).length > 0;
+    li.textContent = `${results[s] ? '✓' : '✕'} ${s} (${Object.keys(m).length} exports)`;
+    li.style.color = results[s] ? 'var(--accent)' : 'var(--state-error)';
+  } catch (err) {
+    results[s] = false;
+    li.textContent = `✕ ${s}: ${err.message}`;
+    li.style.color = 'var(--state-error)';
+  }
+  list.appendChild(li);
+}
+let rendered = false;
+try {
+  const C = await import('../js/viewer/three-common.js');
+  const { THREE } = C;
+  const host = document.getElementById('scene');
+  const renderer = C.createRenderer(host);
+  if (renderer) {
+    const { width, height } = host.getBoundingClientRect();
+    const scene = new THREE.Scene();
+    const camera = C.createOrthoCamera(width / height, 60);
+    C.addLights(scene);
+    const mesh = new THREE.Mesh(new THREE.TorusKnotGeometry(10, 3, 128, 16), C.dataMaterial('neuron'));
+    mesh.rotation.set(0.4, 0.6, 0);
+    scene.add(mesh);
+    const geo = new C.LineGeometry();
+    geo.setPositions([-25, -20, 0, 0, -10, 0, 25, -20, 0]);
+    const line = new C.Line2(geo, C.dataMaterial('siblings', { width: 2 }));
+    line.material.resolution.set(width, height);
+    scene.add(line);
+    C.fitOrtho(camera, C.boundsOf(scene), width / height);
+    renderer.render(scene, camera);
+    const gl = renderer.getContext();
+    const px = new Uint8Array(4);
+    gl.readPixels(Math.floor(gl.drawingBufferWidth / 2), Math.floor(gl.drawingBufferHeight / 2), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    rendered = true;
+    results.webglCentrePixel = Array.from(px);
+  }
+} catch (err) {
+  results.renderError = err.message;
+}
+const ok = specs.every((s) => results[s]) && rendered;
+document.getElementById('status').textContent = ok ? '✓ all modules resolved · WebGL test mesh rendered' : '✕ problems above';
+document.getElementById('status').style.color = ok ? 'var(--accent)' : 'var(--state-error)';
+window.__vendorCheck = { ok, results, rendered };
+</script>
+</body>
+</html>

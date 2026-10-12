@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" data-theme="app-dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NeuroGuesser</title>
+<meta name="description" content="A daily neuron guessing game: name the cell type from its 3D mesh, then how its EM was imaged.">
+<meta name="theme-color" content="#1c222b">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NeuroGuesser">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preload" href="fonts/NGSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/NGSans-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/NGMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/desktop.css">
+<script type="importmap">{"imports":{
+  "preact":"./vendor/preact/preact.module.js",
+  "preact/hooks":"./vendor/preact/hooks.module.js",
+  "htm":"./vendor/htm/htm.module.js",
+  "three":"./vendor/three/three.module.min.js",
+  "three/addons/":"./vendor/three/addons/"}}</script>
+<link rel="modulepreload" href="js/main.js">
+</head>
+<body>
+<div id="app" class="app-root">
+  <noscript><div class="center-col"><span class="overline">NeuroGuesser</span><span class="t-body">NeuroGuesser needs JavaScript.</span></div></noscript>
+</div>
+<div id="fx-layer" aria-hidden="true"></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

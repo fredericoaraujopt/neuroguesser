@@ -1,0 +1,183 @@
+/* NeuroGuesser · Library tab + review flow (js/screens/library.js, js/screens/review.js).
+   Charcoal app-dark, tokens only (css/tokens.css). Handoff screens 5 (Library) and 6 (Review):
+   radius 8 panels/buttons, 4 chips, 0 inside data areas (thumbnails, mesh); states = colour + word/glyph;
+   transform/opacity animations only. Shared classes come from css/app.css (.card, .note, .chip, .meter,
+   .option-row, .btn, .sheet…). */
+
+/* ---------- Library ---------- */
+.lib-h1 { margin: 0; }
+.lib-counts { font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); color: var(--ink-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lib-offline { display: flex; align-items: center; gap: 8px; min-height: 22px; }
+.lib-error { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 0; padding-bottom: 0; color: var(--state-error); }
+.lib-note { color: var(--slate-300); }
+.lib-note.is-quiet { color: var(--ink-muted); }
+.lib-empty { gap: 10px; }
+
+/* thumbnails: 256² transparent silhouettes on the sunken data background (radius 0 inside) */
+.lib-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 160 / 110;
+  background: var(--surface-sunken);
+  overflow: hidden;
+  flex: none;
+}
+.lib-thumb > img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  -webkit-user-drag: none; user-select: none;
+  animation: ng-fade-in var(--dur-fast) linear both;
+}
+.lib-thumb-miss {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); color: var(--slate-500);
+}
+.lib-thumb.is-large { border: 1px solid var(--hairline); }
+
+/* due card */
+.lib-due { gap: 10px; }
+.lib-due-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.lib-due-thumbs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.lib-due-thumb { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.lib-due-thumb .lib-thumb { border: 1px solid var(--hairline); }
+.lib-due-label {
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--ink-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* atlas coverage (4 px accent meter + mono seen/total) */
+.lib-atlas { display: flex; flex-direction: column; gap: 8px; }
+.lib-atlas-row { display: grid; grid-template-columns: 72px minmax(0, 1fr) 52px; align-items: center; gap: 10px; min-height: 16px; }
+.lib-atlas-row > .sp { font: 400 var(--fs-label)/var(--lh-label) var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lib-atlas-row > .num { font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); color: var(--slate-300); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lib-atlas-row > .num.is-up { color: var(--accent); }
+
+/* cell grid (2 columns) */
+.lib-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.lib-grid > li { display: flex; min-width: 0; }
+.lib-card {
+  display: flex; flex-direction: column; align-items: stretch;
+  width: 100%; min-width: 0; padding: 0;
+  background: var(--surface-panel);
+  border: 1px solid var(--hairline); border-radius: var(--radius-md);
+  overflow: hidden;
+  text-align: left;
+  transition: border-color var(--dur-fast) linear;
+}
+@media (hover: hover) { .lib-card:hover { border-color: var(--slate-600); } }
+.lib-card:active { border-color: var(--slate-500); }
+.lib-card-body { flex: 1; display: flex; flex-direction: column; gap: 3px; width: 100%; min-width: 0; padding: 8px 10px 10px; }
+.lib-card-name { font: 700 var(--fs-card)/var(--lh-card) var(--font-sans); color: var(--ink); overflow-wrap: anywhere; }
+.lib-card-sub { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); overflow-wrap: anywhere; }
+.lib-card-foot { margin-top: auto; display: flex; justify-content: space-between; align-items: baseline; gap: 6px; padding-top: 4px; }
+.lib-card-day { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--ink-muted); white-space: nowrap; }
+.lib-status { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); white-space: nowrap; }
+.lib-status.is-accent { color: var(--accent); }
+.lib-status.is-warn { color: var(--state-warn); }
+.lib-status.is-error { color: var(--state-error); }
+
+.lib-foot {
+  position: relative;
+  display: flex; justify-content: center; align-items: center;
+  min-height: 44px;
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); text-align: center;
+}
+.lib-foot .btn-text { font-size: var(--fs-micro); }
+.lib-sentinel { position: absolute; left: 0; right: 0; bottom: 0; height: 1px; pointer-events: none; }
+
+/* skeletons */
+.lib-skel-due { height: 168px; }
+.lib-skel-card { aspect-ratio: 160 / 176; }
+
+/* detail sheet */
+.lib-detail-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.lib-detail-tag { padding-top: 4px; white-space: nowrap; }
+.lib-detail-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font: 400 var(--fs-label)/var(--lh-label) var(--font-sans); }
+.lib-detail-meta > .lib-status { font-size: var(--fs-label); }
+.lib-detail-meta .t-num { font-size: var(--fs-label); }
+.lib-fact { margin: 0; font: 400 var(--fs-read)/var(--lh-read) var(--font-sans); color: var(--slate-200); }
+
+/* ---------- Review (full screen, no tab bar) ---------- */
+.rv { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--surface-canvas); }
+.rv-top {
+  flex: none;
+  display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center;
+  padding: calc(var(--safe-top) + 4px) 8px 0;
+}
+.rv-progress { display: flex; gap: 4px; justify-content: center; min-width: 0; }
+.rv-seg {
+  position: relative;
+  flex: 0 1 48px; width: 48px; height: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--slate-500);   /* upcoming: 3.2:1 on the canvas (a graphical object needs 3:1) */
+  overflow: hidden;
+}
+.rv-seg.is-current { background: var(--ink); }
+.rv-seg::after {
+  content: ""; position: absolute; inset: 0;
+  background: var(--accent);
+  transform: scaleX(0); transform-origin: left center;
+  transition: transform 320ms var(--ease-out);
+}
+.rv-seg.is-done::after { transform: scaleX(1); }
+
+.rv-body {
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  padding: 8px 16px calc(24px + var(--safe-bottom));
+  display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; grid-auto-rows: max-content; gap: 12px;
+}
+.rv-body:focus, .rv-body:focus-visible { outline: none; } /* tabindex=-1 focus target for each new cell, not a keyboard stop */
+.rv-title { margin: 0; }
+
+/* the type's mesh (data area: sunken, radius 0 inside; framed like the handoff's review specimen) */
+.rv-viewer {
+  position: relative;
+  height: clamp(180px, 30vh, 300px);
+  background: var(--surface-sunken);
+  border: 1px solid var(--hairline); border-radius: var(--radius-md);
+  overflow: hidden;
+  touch-action: none;
+}
+.rv-viewer .placeholder-surface::before { width: 48px; height: 48px; }
+.rv-viewer-note {
+  position: absolute; left: 0; right: 0; bottom: 12px;
+  text-align: center; pointer-events: none;
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted);
+}
+.rv-viewer-note.is-error { color: var(--state-error); }
+.rv-scale { position: absolute; left: 12px; bottom: 10px; pointer-events: none; }
+
+/* options a–d: .option-row (app.css) + a mono letter and a sub line */
+.rv-options { display: flex; flex-direction: column; gap: 8px; }
+.rv-option {
+  display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  width: 100%; min-height: 52px; padding: 8px 14px;
+  color: var(--ink);
+  transition: border-color var(--dur-fast) linear, opacity 200ms linear;
+}
+.rv-option:disabled { cursor: default; }
+.rv-option.is-picked { border-color: var(--accent); }
+.rv-option.is-picked .rv-mark { color: var(--accent); }
+.rv-letter { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--ink-muted); align-self: start; padding-top: 2px; }
+.rv-option-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rv-option-label { font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); overflow-wrap: anywhere; }
+.rv-option-sub { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); overflow-wrap: anywhere; }
+.rv-option.is-answer .rv-option-label { font-weight: 700; }
+.rv-mark { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-micro); }
+.rv-check { display: inline-flex; width: 1em; height: 1em; }
+.rv-check .fx-check { width: 1em; height: 1em; }
+
+.rv-verdict { gap: 10px; animation: ng-row-in 280ms var(--ease-out) both; }
+.rv-body > .btn { animation: ng-row-in 280ms var(--ease-out) 60ms both; }
+
+.rv-done, .rv-state {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column; justify-content: center; gap: 12px;
+  padding: 24px 24px calc(24px + var(--safe-bottom));
+}
+.rv-done-num { display: inline-block; min-width: 0.6em; color: var(--accent); }
+.rv-done-btn { margin-top: 12px; }
+.rv-state .btn:first-of-type { margin-top: 12px; }

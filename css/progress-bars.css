@@ -1,0 +1,68 @@
+/* NeuroGuesser · XP / level and atlas collection bars (ARCHITECTURE.md §3.4 items 2-3): js/ui/xp-bar.js (summary card,
+   profile card, desktop header chip) and js/ui/atlas-bar.js (the reveal's species bar). Loaded with
+   loadCss('css/progress-bars.css') by both modules.
+   Charcoal: tokens only; accent + ink + slate in chrome (no data-* colours); radii 8 (badge) / 4 (chips, meters);
+   every state is a colour plus a word ("+1 new type", "↑ Level up"); numerals in Mono; motion is transform / opacity
+   only and ≤ 900 ms, and reduced motion / Celebrations off make it instant (css/app.css). */
+
+/* ---------- XP card (summary) ---------- */
+.xp-card {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center;
+  column-gap: 12px; row-gap: 10px;
+}
+.xp-badge {
+  display: flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; flex: none;
+  border: 2px solid var(--accent); border-radius: var(--radius-md);
+  font: 400 var(--fs-title)/var(--lh-title) var(--font-mono); font-variant-numeric: tabular-nums; color: var(--accent);
+}
+.xp-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.xp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-width: 0; }
+.xp-title { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; min-width: 0; }
+.xp-up { transform-origin: left center; }
+.xp-gain {
+  flex: none;
+  font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); font-variant-numeric: tabular-nums; color: var(--accent);
+  white-space: nowrap; text-align: right;
+}
+.xp-gain small { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); }
+.xp-total { font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); font-variant-numeric: tabular-nums; color: var(--slate-200); white-space: nowrap; }
+
+/* the bar: 6 px accent on slate-700; the fill follows the running value frame by frame while the day counts in */
+.xp-meter {
+  grid-column: 1 / -1;
+  position: relative; height: 6px;
+  background: var(--slate-700); border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.xp-meter > i {
+  position: absolute; inset: 0;
+  background: var(--accent); border-radius: var(--radius-sm);
+  transform-origin: left center;
+  transition: transform 600ms var(--ease-out);
+}
+.xp-meter.is-live > i { transition: none; }
+
+/* profile (Settings): level and total over the bar, no badge */
+.xp-card.is-profile { grid-template-columns: minmax(0, 1fr); row-gap: 6px; }
+.xp-card.is-profile .xp-meter { grid-column: 1; }
+
+/* ---------- level chip (desktop header, inside the Profile link) ---------- */
+.lvl-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 22px; margin-left: 8px; padding: 0 6px;
+  border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); color: var(--accent);
+  white-space: nowrap; vertical-align: middle;
+}
+.lvl-chip-meter { position: relative; width: 24px; height: 4px; background: var(--slate-700); border-radius: var(--radius-sm); overflow: hidden; }
+.lvl-chip-meter > i { position: absolute; inset: 0; background: var(--accent); transform-origin: left center; }
+
+/* ---------- atlas collection bar (reveal) ---------- */
+.atlas-bar { display: flex; flex-direction: column; gap: 6px; }
+.atlas-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 22px; }
+.atlas-sp { min-width: 0; font: 400 var(--fs-label)/var(--lh-label) var(--font-sans); color: var(--slate-200); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.atlas-right { flex: none; display: inline-flex; align-items: center; gap: 8px; }
+.atlas-num { min-width: 5ch; font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); font-variant-numeric: tabular-nums; color: var(--slate-300); text-align: right; }
+.atlas-num.is-up { color: var(--accent); }
+.atlas-new { transform-origin: right center; }

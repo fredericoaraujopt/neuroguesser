@@ -1,0 +1,25 @@
+# Unit tests for the app shell (node --test; no dependencies are installed). GitHub Pages serves the main
+# branch root directly ("Deploy from a branch"), so there is no build or deploy job here.
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: node --test (needs Node >= 22.15)
+        run: |
+          node --version
+          node --test

@@ -1,0 +1,139 @@
+/* NeuroGuesser · round screen (js/screens/round.js, W2 "play").
+   Builds on css/app.css: .viewer, .viewer-top/-label/-points/-legend/-expand, .clue-bar/.clue-tab, .question,
+   .options/.option, .status-line, .lock-bar, .chip-lg. Charcoal: accent/ink in chrome, data-* only inside the
+   viewer, every state = colour + word/glyph, transform/opacity animations only. */
+
+/* column: viewer (fixed) · question area (scrolls) · lock bar (pinned above the tab bar) */
+.round {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  /* 400 px on the 375 × 780 design frame; shorter screens keep room for the options */
+  --viewer-h: clamp(280px, calc(100vh - 380px), 400px);
+}
+@supports (height: 100dvh) {
+  .round { --viewer-h: clamp(280px, calc(100dvh - 380px), 400px); }
+}
+.round-scroll {
+  position: relative;
+  flex: 1 1 auto; min-height: 0;
+  overflow-x: hidden; overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.round-h { margin: 0; }
+.round-method { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.round-enter { animation: ng-row-in 280ms var(--ease-out) both; }
+
+/* ---------- viewer ---------- */
+.round-pane { position: absolute; inset: 0; }
+.round-canvas { position: absolute; inset: 0; }
+.round-tag { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.round-points { position: relative; white-space: nowrap; }
+.viewer-points.is-warn { color: var(--state-warn); }
+.round-delta {
+  position: absolute; right: 0; top: 100%; margin-top: 2px;
+  font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); color: var(--state-warn);
+  pointer-events: none;
+  animation: round-delta 900ms var(--ease-out) both;
+}
+@keyframes round-delta {
+  0% { opacity: 0; transform: translateY(-4px); }
+  20% { opacity: 1; transform: none; }
+  70% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(6px); }
+}
+
+/* loading / error note centred in the data area */
+.round-msg {
+  position: absolute; left: 16px; right: 16px; top: 50%;
+  transform: translateY(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--ink-muted);
+  text-transform: uppercase; text-align: center;
+  pointer-events: none;
+}
+.round-msg.is-error { color: var(--state-error); }
+.round-msg .btn-text { pointer-events: auto; text-transform: none; font-family: var(--font-sans); }
+
+/* graph clue: between the top row and the docked clue bar (the graph pane has no legend and no ⤢, so it starts
+   right under "#33 · 2/5"; 244 px tall at 375 × 780 = GraphView's design box, so 3 partners per side keep their
+   two label lines clear of the column headers and the key) */
+.round-graph {
+  position: absolute; left: 16px; right: 16px;
+  top: calc(var(--safe-top) + 44px);
+  bottom: 68px;
+  overflow: hidden;
+}
+.round-graph > svg { display: block; }
+
+/* EM (method stage). The image sits between the top row and the docked clue bar (both stay on the sunken
+   band, so they read over any EM); controls floating on the image get solid sunken backings. */
+.round-viewer.is-em .round-canvas { top: calc(var(--safe-top) + 44px); bottom: 66px; }
+.round-viewer.is-em .viewer-expand { top: calc(var(--safe-top) + 52px); }
+.round-viewer.is-em .viewer-expand .btn-ghost { background: var(--surface-sunken); border-radius: var(--radius-md); }
+.round-mask {
+  position: absolute; left: 8px; top: calc(var(--safe-top) + 52px);
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 8px;
+  background: var(--surface-sunken); border-radius: var(--radius-sm);
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--slate-300);
+}
+.round-mask::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+.round-mask[aria-pressed="false"] { color: var(--ink-muted); }
+.round-mask-key { position: relative; width: 10px; height: 7px; border: 1px solid var(--data-orange); }
+.round-mask-key::before { content: ""; position: absolute; inset: 0; background: var(--data-orange); opacity: 0; }
+.round-mask[aria-pressed="true"] .round-mask-key::before { opacity: 0.32; }
+.round-zstep {
+  position: absolute; right: 8px; top: calc(var(--safe-top) + 104px);
+  display: flex; flex-direction: column; align-items: center;
+  width: 44px;
+  background: var(--surface-sunken); border-radius: var(--radius-md);
+}
+.round-zstep .btn-ghost:disabled { color: var(--slate-600); }
+.round-z { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--slate-300); white-space: nowrap; text-align: center; }
+.round-scale {
+  position: absolute; left: 8px; bottom: 74px;
+  padding: 6px 8px;
+  background: var(--surface-sunken); border-radius: var(--radius-sm);
+}
+/* the type round's mesh (v0.6.0): bare, like the legend above it (16 px inset); pointer events pass to the viewer */
+.round-scale.is-mesh { left: 16px; padding: 0; background: none; pointer-events: none; }
+
+/* ---------- question area ---------- */
+.round-verdict { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; min-height: 22px; }
+.round-verdict > .overline { padding-top: 2px; }
+.round-stamp { flex: none; }
+.option-mark .fx-check { margin-right: 1px; }
+/* strikethrough across every line of a wrapped label (fx-strike's single ::after line sits between the two
+   lines of a 2-line label): an inline 1 px gradient whose fragments are laid end to end, so it draws left → right
+   through line 1, then line 2 (250 ms), before the card fades to 45%. */
+.round-strike {
+  background: linear-gradient(currentColor, currentColor) no-repeat 0 58% / 0 1px;
+  transition: background-size 250ms var(--ease-out);
+}
+.round-strike.is-struck { background-size: 100% 1px; }
+.option.is-answer .option-label { color: var(--ink); }
+
+/* method chips: 44 px min, radius 8, name + one-line blurb, state word on the right */
+.method-chips { display: flex; flex-direction: column; gap: 8px; }
+.method-chip {
+  flex-direction: column; align-items: stretch; justify-content: center; gap: 2px;
+  width: 100%; padding: 8px 14px;
+  transition: border-color var(--dur-fast) linear, color var(--dur-fast) linear;
+}
+.method-chip-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.method-chip-name { font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); }
+.method-chip-blurb { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); }
+.method-chip .option-mark { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); }
+.method-chip.is-picked, .method-chip.is-right, .method-chip.is-answer { border-color: var(--accent); }
+.method-chip.is-picked .method-chip-name, .method-chip.is-right .method-chip-name, .method-chip.is-answer .method-chip-name,
+.method-chip.is-picked .option-mark, .method-chip.is-right .option-mark, .method-chip.is-answer .option-mark { color: var(--accent); }
+.method-chip.is-wrong { border-color: var(--state-error); }
+.method-chip.is-wrong .option-mark { color: var(--state-error); }
+.method-chip[aria-disabled="true"] { cursor: default; }
+.round-scroll { scroll-padding-top: 8px; scroll-padding-bottom: calc(var(--lockbar-h) + 8px); }
+/* the short beat after the type stage: the (disabled) lock bar's "✓ Correct" / "✕ No guesses left" carries the
+   state colour, not disabled grey */
+.lock-bar.is-correct .btn-primary:disabled { color: var(--accent); }
+.lock-bar.is-missed .btn-primary:disabled { color: var(--state-error); }

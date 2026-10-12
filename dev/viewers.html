@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" data-theme="app-dark">
+<head>
+<meta charset="utf-8">
+<!-- every relative URL (import map, loadCss('css/…'), module src) resolves from the app root, like index.html -->
+<base href="../">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NeuroGuesser · viewers</title>
+<meta name="theme-color" content="#1c222b">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/viewer.css">
+<script type="importmap">{"imports":{
+  "preact":"./vendor/preact/preact.module.js",
+  "preact/hooks":"./vendor/preact/hooks.module.js",
+  "htm":"./vendor/htm/htm.module.js",
+  "three":"./vendor/three/three.module.min.js",
+  "three/addons/":"./vendor/three/addons/"}}</script>
+<style>
+  html, body { height: auto; overflow: auto; }
+  body { background: var(--surface-sunken); }
+  .dv { max-width: 1280px; margin: 0 auto; padding: 24px 16px 64px; display: flex; flex-direction: column; gap: 32px; }
+  .dv-head { display: flex; flex-direction: column; gap: 6px; }
+  .dv-sec { display: flex; flex-direction: column; gap: 12px; }
+  .dv-row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .dv-frame { position: relative; width: 375px; height: 400px; background: var(--surface-sunken); border: 1px solid var(--hairline); overflow: hidden; flex: none; }
+  .dv-frame.is-graph { height: 244px; width: 343px; padding: 0; }
+  .dv-phone { position: relative; width: 375px; height: 780px; background: var(--surface-canvas); border: 1px solid var(--hairline); overflow: hidden; flex: none; }
+  .dv-side { display: flex; flex-direction: column; gap: 10px; width: 340px; max-width: 100%; }
+  .dv-kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font: 400 11px/1.4 var(--font-mono); color: var(--slate-300); }
+  .dv-kv > :nth-child(odd) { color: var(--ink-muted); }
+  .dv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dv-note { font: 400 11px/1.45 var(--font-sans); color: var(--ink-muted); }
+  .dv-frame .viewer-top, .dv-frame .viewer-legend, .dv-frame .viewer-expand { z-index: 2; }
+  .dv-frame .viewer-top { top: 14px; }
+  .dv-frame .viewer-expand { top: 44px; }
+  .dv-frame .viewer-legend { top: 56px; }
+  .dv-scale { position: absolute; right: 16px; bottom: 16px; z-index: 2; }
+  .dv-bottom { position: absolute; left: 12px; right: 12px; bottom: 10px; z-index: 2; }
+  .dv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(343px, 1fr)); gap: 16px; }
+  .dv-phone-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+</style>
+</head>
+<body>
+<div id="dev"></div>
+<div id="fx-layer" aria-hidden="true"></div>
+<script type="module" src="dev/viewers.js"></script>
+</body>
+</html>

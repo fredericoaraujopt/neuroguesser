@@ -1,0 +1,117 @@
+/* NeuroGuesser · prototype feedback loop (js/feedback.js; ARCHITECTURE.md §3.2). Loaded with loadCss().
+   Charcoal app-dark tokens only; radius 8 for the button/inputs/panels, 4 for chips; no data-* colours; one
+   elevation (shadow-raised) stays with the sheet; transform/opacity animations only; every state = colour + word. */
+
+/* ---------- "✎ Feedback" button in its own strip, directly above the tab bar ----------
+   The strip (.fb-dock, 44 px = the button's hit target) is reserved space: while it shows, every screen (.app-main)
+   ends on top of it, so the button never lies over an option card, a lock bar, a row or an input at any scroll
+   position. On the round screen it continues the lock bar's canvas below the Guess button; elsewhere a hairline
+   separates it from the content.
+   It stays (button hidden) while a bottom sheet is open, so nothing behind the scrim reflows; it goes with the tab
+   bar (full view, review, full-screen sheets) and with Settings → "Show feedback button" off. */
+.app-root { --fb-dock-h: 44px; }
+.fb-dock {
+  position: absolute; left: 0; right: 0;
+  bottom: calc(var(--tabbar-h) + var(--safe-bottom));
+  height: var(--fb-dock-h);
+  display: flex; align-items: center;
+  padding: 0 12px;
+  background: var(--surface-canvas);
+  z-index: 21;
+}
+.app-root:has(> .fb-dock) > .app-main:not(.is-full) { bottom: calc(var(--tabbar-h) + var(--safe-bottom) + var(--fb-dock-h)); }
+.app-main:not(:has(.lock-bar)) ~ .fb-dock { border-top: 1px solid var(--hairline); }
+/* the round viewer gives the strip's height back (round.css sizes it from the window height), so the options keep
+   the room they have without the strip; 280 px floor and 400 px cap unchanged */
+.app-root:has(> .fb-dock) .round { --viewer-h: clamp(280px, calc(100vh - 380px - var(--fb-dock-h)), 400px); }
+@supports (height: 100dvh) {
+  .app-root:has(> .fb-dock) .round { --viewer-h: clamp(280px, calc(100dvh - 380px - var(--fb-dock-h)), 400px); }
+}
+.fb-pill {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 10px;
+  background: transparent;                      /* ghost: the strip behind it is empty canvas */
+  border: 1px solid var(--hairline); border-radius: var(--radius-md);
+  font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); color: var(--slate-300);
+  animation: ng-fade-in 160ms linear both;
+}
+.fb-pill::after { /* 44 px hit target around the 28 px pill */
+  content: ""; position: absolute; left: -8px; right: -8px; top: 50%; height: 44px; transform: translateY(-50%);
+}
+.fb-pill:hover { color: var(--ink); border-color: var(--slate-600); }
+.fb-pill-glyph { font-size: var(--fs-body); line-height: var(--lh-body); }
+/* Toasts (and the notice below) sit above the strip. */
+.app-root:has(> .fb-dock) > .toast-host:not(.is-low) { margin-bottom: var(--fb-dock-h); }
+/* Day summary on phones and tablets: the countdown ("Next neurons in") ends the screen, right where a toast would sit,
+   so a toast there (the overtake "↑ You passed …") takes the strip instead, standing in for its button while it shows
+   (2 px above the tab bar; a 2- or 3-line toast grows into the summary's 32 px end padding, never over its content).
+   Without the strip the summary keeps a strip-high lane free at its end, so the countdown scrolls clear of a toast. */
+@media (max-width: 1023px) {
+  .app-root:has(> .fb-dock) > .app-main:has(.summary-screen) ~ .toast-host:not(.is-low) {
+    margin-bottom: 0; bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 2px);
+  }
+  .app-root:has(> .toast-host .toast) > .app-main:has(.summary-screen) ~ .fb-dock > .fb-pill { visibility: hidden; }
+  .app-root:not(:has(> .fb-dock)) .summary-screen > .summary { padding-bottom: calc(76px + var(--safe-bottom)); }
+}
+
+/* ---------- "N of your notes were addressed in vX →" notice (a tappable toast) ---------- */
+.fb-notice-host { z-index: 51; }
+.toast-host:has(.toast) ~ .fb-notice-host { transform: translateY(-52px); } /* never on top of a regular toast */
+.fb-notice { color: var(--ink); text-align: left; cursor: pointer; }
+
+/* ---------- sheet ---------- */
+.fb-cats { gap: 6px; }
+.fb-hint { margin-top: -4px; }
+.fb-text {
+  height: auto; min-height: 112px; padding: 10px 12px;
+  resize: vertical;
+  font: 400 var(--fs-body)/var(--lh-body) var(--font-sans);
+}
+@media (pointer: coarse) {
+  .fb-text { font-size: var(--fs-field-touch); } /* iOS zooms the page into any focused field under 16 px */
+}
+.fb-count { align-self: flex-end; }
+.fb-attach { display: flex; flex-direction: column; }
+.fb-shot {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  padding: 8px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--hairline); border-radius: var(--radius-md);
+}
+.fb-thumb { width: 44px; height: 64px; object-fit: cover; border-radius: var(--radius-sm); background: var(--surface-canvas); }
+.fb-remove { color: var(--ink-muted); }
+.fb-context {
+  margin: 0;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 8px 10px;
+  border: 1px dashed var(--hairline); border-radius: var(--radius-md);
+}
+.fb-ctx-line { color: var(--slate-200); overflow-wrap: anywhere; }
+.fb-ctx-route { overflow-wrap: anywhere; }
+.fb-msg { font: 400 var(--fs-label)/var(--lh-label) var(--font-sans); }
+
+/* ---------- Settings → Your feedback ---------- */
+.fb-mine:focus { outline: none; }
+.fb-mine:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.fb-item { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-top: 1px solid var(--hairline); }
+.fb-item:first-child { border-top: 0; }
+.fb-item-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.fb-item-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fb-reply { display: flex; flex-direction: column; gap: 2px; padding-left: 10px; border-left: 2px solid var(--slate-600); }
+.fb-reply > p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fb-status { font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); }
+.fb-status.is-muted { color: var(--ink-muted); }
+.fb-status.is-soft { color: var(--slate-300); }
+.fb-status.is-warn { color: var(--state-warn); }
+.fb-status.is-accent { color: var(--accent); }
+.fb-queue { display: flex; flex-direction: column; gap: 4px; }
+.fb-item.is-queued { padding: 8px 0; }
+.fb-queue .btn-text { align-self: flex-start; }
+.fb-queue .btn-text:disabled { color: var(--ink-muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fb-pill { animation: none; }
+}
+.no-motion .fb-pill { animation: none; }

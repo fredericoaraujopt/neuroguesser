@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "NeuroGuesser",
+  "short_name": "NeuroGuesser",
+  "description": "A daily neuron guessing game: name the cell type from its 3D mesh, then how its EM was imaged.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1c222b",
+  "background_color": "#1c222b",
+  "categories": ["games", "education"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

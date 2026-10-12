@@ -1,0 +1,72 @@
+/* NeuroGuesser · day progress bar (js/ui/day-progress.js; ARCHITECTURE.md §3.3 item 3).
+   Loaded with loadCss('css/day-progress.css'). Charcoal: tokens only, accent / state-error / slate in chrome (no data-*),
+   radius 4, every state = colour + glyph, transform/opacity motion only (≤ 600 ms; reduced motion and Celebrations
+   off are instant through the global rules in css/app.css). */
+
+.day-progress {
+  display: flex; align-items: center; gap: 12px;
+  min-width: 0;
+}
+.dp-segs {
+  flex: 1 1 auto; min-width: 0;
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px;
+}
+.dp-seg {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  height: 18px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--slate-700);
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--ink-muted);
+}
+.dp-fill {
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  transform-origin: left center;
+  opacity: 0;
+}
+.dp-glyph { position: relative; }
+
+/* done: named (accent), met (accent at 55 %), missed (state-error) */
+.dp-seg.is-named, .dp-seg.is-met, .dp-seg.is-missed { background: transparent; }
+.dp-seg.is-named .dp-fill { background: var(--accent); opacity: 1; }
+.dp-seg.is-met .dp-fill { background: var(--accent); opacity: 0.55; }
+.dp-seg.is-missed .dp-fill { background: var(--state-error); opacity: 1; }
+.dp-seg.is-named .dp-glyph, .dp-seg.is-missed .dp-glyph { color: var(--accent-ink); }
+.dp-seg.is-met .dp-glyph { color: var(--ink); }
+/* current: accent outline + its number; upcoming: slate-700 + its number; closed (grace): outline + "–".
+   Contrast on the canvas: the upcoming segment's slate-500 keyline is 3.2:1 (a graphical object needs 3:1) and its
+   number, slate-300 on slate-700, 5.7:1; the closed outline is slate-500 too, its "–" ink-muted (5.1:1). */
+.dp-seg.is-current { background: transparent; border: 1.5px solid var(--accent); color: var(--accent); }
+.dp-seg.is-upcoming { border: 1px solid var(--slate-500); color: var(--slate-300); }
+.dp-seg.is-closed { background: transparent; border: 1px dashed var(--slate-500); color: var(--ink-muted); }
+
+/* the segment of a round that just finished fills left → right, then its glyph appears */
+.dp-seg.is-filling { background: var(--slate-700); }
+.dp-seg.is-filling .dp-fill { animation: dp-fill 440ms var(--ease-out) 100ms both; }
+.dp-seg.is-filling .dp-glyph { animation: dp-glyph 140ms linear 420ms both; }
+@keyframes dp-fill { from { transform: scaleX(0); } to { transform: none; } }
+@keyframes dp-glyph { from { opacity: 0; } to { opacity: 1; } }
+
+.dp-total {
+  flex: none;
+  font: 400 var(--fs-body)/var(--lh-body) var(--font-mono); font-variant-numeric: tabular-nums; color: var(--accent);
+  white-space: nowrap; text-align: right;
+}
+.dp-total small { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); }
+
+/* placements (inline bars) */
+.day-progress.in-round { padding: 14px 16px 0; }
+.day-progress.in-reveal { padding-bottom: 4px; }
+.day-progress.in-summary .dp-seg { height: 20px; }
+
+/* desktop top header (≥ 1024 px, css/desktop.css places it): compact, fixed-width segments */
+.day-progress.is-header { gap: 10px; }
+.day-progress.is-header .dp-segs { flex: none; grid-auto-columns: 32px; }
+.day-progress.is-header .dp-seg { height: 16px; font-size: var(--fs-micro); } /* desktop.css sizes the header bar (label 12) */
+.day-progress.is-header .dp-total { font-size: var(--fs-label); }
+/* on desktop the bar sits in the header: when the header carries one, the inline copies step aside */
+@media (min-width: 1024px) {
+  .app-root:has(.day-progress.is-header) .day-progress.is-inline { display: none; }
+}

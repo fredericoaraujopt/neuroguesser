@@ -1,0 +1,328 @@
+/* NeuroGuesser · reveal, day summary, share sheet, report sheet (W2 "reveal" track).
+   Loaded with loadCss('css/reveal.css') from js/screens/{reveal,summary,share,report}.js.
+   Charcoal: tokens only (css/tokens.css), radii 8 / 4 / 0 inside data areas, no shadows outside sheets,
+   every state = colour + word or glyph, numerals in Liberation Mono, transform/opacity motion only. */
+
+/* ======================================================================================
+   Reveal (handoff screen 3)
+   ====================================================================================== */
+.reveal { background: var(--surface-canvas); }
+
+/* hero: 420 px data area (+ status bar), drawn by MeshViewer */
+.reveal-hero { height: calc(420px + var(--safe-top)); }
+.reveal-hero-top {
+  position: absolute; left: 16px; right: 12px; top: calc(var(--safe-top) + 8px);
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+  pointer-events: none;
+}
+.reveal-hero-top > * { pointer-events: auto; }
+/* Cell | In context: 44 px buttons, lifted 6 px so the labels stay level with the verdict line */
+.reveal-hero-top > .text-switch { margin-top: -6px; }
+.reveal-verdict-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.reveal-verdict {
+  display: inline-flex; align-items: center; gap: 4px;
+  min-height: 32px; padding: 0 8px; margin-left: -8px;
+  border-radius: var(--radius-md);
+  font: 700 var(--fs-card)/var(--lh-card) var(--font-sans); white-space: nowrap;
+}
+.reveal-verdict .t-num { font-weight: 400; }
+.reveal-verdict.is-accent { color: var(--accent); }
+.reveal-verdict.is-error { color: var(--state-error); }
+.reveal-verdict.is-muted { color: var(--ink-muted); }
+.reveal-perfect { display: inline-block; transform-origin: left center; }
+.reveal-hero-tools {
+  position: absolute; right: 8px; top: calc(var(--safe-top) + 52px);
+  display: flex; flex-direction: column;
+}
+.reveal-hero-note { position: absolute; left: 16px; top: calc(var(--safe-top) + 72px); color: var(--state-error); pointer-events: none; }
+.reveal-hero-keys {
+  position: absolute; left: 16px; right: 16px; bottom: 58px;
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 12px;
+  pointer-events: none;
+}
+.reveal-hero-keys.is-low { bottom: 14px; }
+.reveal-legend { min-width: 0; max-width: 64%; }
+.reveal-legend > span { align-items: flex-start; }
+.reveal-legend .key-line { flex: none; margin-top: 6px; }
+.reveal-legend .key-box { flex: none; margin-top: 3px; }
+.reveal-hero-keys .scalebar { flex: none; }
+.reveal-toggles { position: absolute; left: 12px; right: 12px; bottom: 10px; }
+.reveal-toggles > button {
+  min-width: 0; padding: 0 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: 1 1 auto; /* grow from the label's width: a long sibling type name ("✓ Output cell (ELL projection neuron) · 12")
+                     takes the room "✓ Volume" / "✓ Layers" don't need, instead of an equal third and an ellipsis */
+}
+/* ...but never more: the short toggles keep their label's width and only the type name (it has the ellipsis) gives
+   way, or at 320 px "✓ Volume" / "✓ Regions" would run out of their buttons and past their underlines */
+.reveal-toggles > button:not(:has(> .reveal-toggle-text)) { flex-shrink: 0; }
+.reveal-toggle-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reveal-toggle-count { flex: none; white-space: nowrap; }
+
+/* body */
+.reveal-body {
+  padding: 16px 16px calc(32px + var(--safe-bottom));
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; gap: 12px;
+}
+/* v1.2 (§3.3 item 2): the neuron leads — the name (23), then the Facts tab ("Did you know?") by default */
+.reveal-name { margin: 0; font: 700 var(--fs-name)/var(--lh-name) var(--font-sans); color: var(--ink); }
+.reveal-skel-title { display: block; height: 26px; width: 62%; border-radius: var(--radius-sm); }
+.reveal-where { font-size: var(--fs-label); }
+.reveal-prov { margin: 0; }
+.reveal-p { margin: 0; }
+/* reading text (v1.3 role, ARCHITECTURE.md 3.4 item 6: 13 / 1.45 on phones, 18 / 1.45 on a laptop): the trivia
+   facts and the partner data line, the role line and the How-it-was-made prose (summaries, typing facts, what to notice) */
+.reveal .dyk-text, .reveal .dyk-data-text, .reveal .reveal-role, .reveal .reveal-p, .reveal .reveal-facts > li > .t-body {
+  font: 400 var(--fs-read)/var(--lh-read) var(--font-sans);
+}
+.reveal-outcome { display: block; }
+
+/* detail tabs: Facts · Ephys · Genes · Graph · How it was made · Papers — a long label gets the room it needs and
+   the row wraps (two full rows at 375 px with 5–6 tabs) instead of truncating */
+.segmented.reveal-tabs { display: flex; flex-wrap: wrap; }
+.segmented.reveal-tabs > button { flex: 1 1 auto; padding: 0 12px; white-space: nowrap; }
+
+/* Facts tab */
+.reveal-facts-panel { display: flex; flex-direction: column; gap: 12px; }
+.reveal-role { margin: 0; color: var(--slate-200); }
+.reveal-soon { margin: 0; padding: 12px; border: 1px dashed var(--hairline); border-radius: var(--radius-md); }
+.reveal-fact-kv { padding-top: 0; border-top: 0; }
+.reveal-dyk { gap: 4px; padding: 14px 14px 6px; }
+.reveal-dyk > .row-between { align-items: baseline; padding-bottom: 6px; }
+.dyk-title { margin: 0; } /* h2 (the card) over h3 (its parts), under the cell's h1 */
+.dyk-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.dyk-fact { padding-top: 10px; border-top: 1px solid var(--hairline); }
+.dyk-fact:first-child { padding-top: 2px; border-top: 0; }
+.dyk-body { min-width: 0; display: flex; flex-direction: column; }
+/* v1.3 (ARCHITECTURE.md 3.4 item 1): three labelled parts — What it does · How to tell it apart · Who it talks to */
+.dyk-part { display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--hairline); }
+.reveal-dyk > .row-between + .dyk-part { padding-top: 2px; border-top: 0; }
+.dyk-part-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; }
+.dyk-part-label { margin: 0; }
+.dyk-vs { min-width: 0; font: 400 var(--fs-label)/var(--lh-label) var(--font-sans); color: var(--slate-300); overflow-wrap: break-word; }
+/* the data line comes from this dataset, not the literature: a sunken box with its own caption */
+.dyk-data {
+  display: flex; flex-direction: column; gap: 4px;
+  margin: 4px 0 8px; padding: 10px 12px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--hairline); border-radius: var(--radius-md);
+}
+.dyk-data-text { margin: 0; color: var(--slate-200); overflow-wrap: break-word; }
+.dyk-part.is-talks > .dyk-body + .dyk-data { margin-top: 0; }
+.dyk-text { margin: 0; color: var(--ink); overflow-wrap: break-word; }
+.dyk-meta { display: flex; justify-content: space-between; align-items: center; column-gap: 12px; }
+.dyk-cite, .dyk-toggle {
+  display: inline-flex; align-items: center;
+  min-height: 44px;
+  font: 400 var(--fs-label)/var(--lh-label) var(--font-sans);
+}
+.dyk-cite { flex: 1 1 auto; min-width: 0; padding: 6px 0; color: var(--accent); overflow-wrap: break-word; } /* a long citation wraps beside the toggle */
+.dyk-toggle { flex: none; margin-left: auto; padding-left: 8px; color: var(--slate-300); white-space: nowrap; }
+.dyk-toggle[aria-expanded="true"] { color: var(--ink); }
+.dyk-quotes { display: flex; flex-direction: column; gap: 10px; margin: 0 0 10px; animation: ng-fade-in 160ms linear both; }
+.dyk-quote {
+  margin: 0; padding: 2px 0 2px 12px;
+  border-left: 2px solid var(--slate-600);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.dyk-quote > p { margin: 0; font: italic 400 var(--fs-read)/var(--lh-read) var(--font-sans); color: var(--slate-200); overflow-wrap: break-word; }
+.dyk-quote-cite { color: var(--accent); padding: 16px 0; } /* a support quote's own paper; inline padding: a 44 px tap target, the lines do not move */
+.reveal-atlas { padding: 2px 0; }
+
+/* How it was made: what to notice sits inside the imaging card */
+.reveal-notice { display: flex; flex-direction: column; gap: 4px; padding-top: 8px; border-top: 1px solid var(--hairline); }
+.reveal-cite {
+  display: block; margin-top: 3px;
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}
+.reveal-cite a { color: var(--accent); padding: 16px 0; } /* inline padding: a 44 px tap target, the lines do not move */
+.reveal-facts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.reveal-facts > li { display: flex; flex-direction: column; }
+.reveal-kv { grid-template-columns: auto minmax(0, 1fr); padding-top: 4px; border-top: 1px solid var(--hairline); }
+.reveal-kv > .k { padding-top: 1px; }
+.reveal-v-text { font: 400 var(--fs-label)/var(--lh-label) var(--font-sans) !important; color: var(--slate-200); text-align: right; }
+.reveal-v-break { overflow-wrap: anywhere; }
+
+/* detail panels */
+.reveal-panel {
+  display: flex; flex-direction: column; gap: 8px;
+  border: 1px solid var(--hairline); border-radius: var(--radius-md);
+}
+.reveal-panel.is-sunken { background: var(--surface-sunken); }
+.reveal-panel.is-panel { background: var(--surface-panel); padding: 12px; }
+.reveal-caption { padding: 0 8px; font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); }
+.reveal-figure-note {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 120px; padding: 12px; text-align: center;
+}
+.reveal-scf-img { width: 100%; height: auto; border-radius: 0; background: var(--surface-sunken); }
+
+/* ephys: Vm (mV) vs Time (ms), outward ticks, no gridlines (Charcoal figure rules) */
+.reveal-ephys { padding: 8px 4px 10px; }
+.ephys-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ephys-trace { fill: none; stroke: var(--data-black); stroke-width: 0.75; stroke-linejoin: round; }
+.ephys-axis line { stroke: var(--ink); stroke-width: 0.75; }
+.ephys-text text { fill: var(--ink); font: 400 var(--fs-fig-tick)/var(--lh-micro) var(--font-sans); }
+.reveal-table {
+  width: calc(100% - 16px); margin: 0 8px;
+  border-collapse: collapse;
+  font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); font-variant-numeric: tabular-nums;
+}
+.reveal-table thead th {
+  padding: 0 0 4px 8px;
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); text-align: right;
+}
+.reveal-table thead th:first-child { padding-left: 0; text-align: left; }
+.reveal-table tbody th, .reveal-table td { padding: 6px 0 6px 8px; border-top: 1px solid var(--hairline); }
+.reveal-table tbody th { padding-left: 0; font: 400 var(--fs-label)/var(--lh-label) var(--font-sans); text-align: left; color: var(--ink); }
+.reveal-table td { text-align: right; white-space: nowrap; }
+
+/* genes: horizontal bars, marker data-orange vs context data-black, keyed */
+.reveal-genes { padding: 10px 12px; gap: 6px; }
+.genes-rows { display: flex; flex-direction: column; gap: 6px; }
+.genes-row { display: grid; grid-template-columns: 64px minmax(0, 1fr) 30px; align-items: center; gap: 8px; }
+.genes-row > .t-gene { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.genes-track { position: relative; height: 8px; background: var(--surface-panel); }
+.genes-track > i { position: absolute; left: 0; top: 0; bottom: 0; }
+.genes-track > i.is-marker, .genes-keys i.is-marker { background: var(--data-orange); }
+.genes-track > i.is-context, .genes-keys i.is-context { background: var(--data-black); }
+.genes-val { font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); text-align: right; }
+.genes-key { display: flex; justify-content: space-between; gap: 12px; padding-top: 4px; font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); }
+.genes-keys { display: flex; gap: 12px; }
+.genes-keys > span { display: inline-flex; align-items: center; gap: 4px; }
+.genes-keys i { width: 8px; height: 8px; }
+.reveal-genes .reveal-caption { padding: 0; }
+
+/* graph */
+.reveal-graph { padding: 8px; align-items: center; }
+.reveal-graph svg { max-width: 100%; height: auto; }
+
+/* method (How it was made) */
+.reveal-method .kv { grid-template-columns: auto minmax(0, 1fr); }
+.reveal-method-name { font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); }
+.reveal-method-verdict { font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); text-align: right; }
+.reveal-method-verdict.is-accent { color: var(--accent); }
+.reveal-method-verdict.is-error { color: var(--state-error); }
+.reveal-method-verdict.is-muted { color: var(--ink-muted); }
+.reveal-method .btn { margin-top: 4px; }
+
+/* papers: each a 44 px link row */
+.reveal-papers { display: flex; flex-direction: column; }
+.reveal-paper {
+  display: flex; flex-direction: column; justify-content: center; gap: 2px;
+  min-height: 44px; padding: 8px 0;
+  border-top: 1px solid var(--hairline);
+}
+.reveal-paper:first-child { border-top: 0; padding-top: 0; }
+.reveal-paper .overline { font-size: var(--fs-micro); }
+.reveal-paper:hover { text-decoration: none; }
+.reveal-paper:hover .reveal-paper-cite { text-decoration: underline; }
+.reveal-paper-cite { font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); color: var(--accent); }
+.reveal-paper > .t-num { overflow-wrap: anywhere; }
+.reveal-attrib { margin: 4px 0 0; padding-top: 8px; border-top: 1px solid var(--hairline); }
+
+/* actions + footer */
+.reveal-actions { padding-top: 4px; }
+.reveal-report { display: flex; justify-content: center; margin-top: -4px; }
+.reveal-footer { font: 400 var(--fs-label)/var(--lh-label) var(--font-sans); color: var(--ink-muted); text-align: center; }
+
+/* ======================================================================================
+   Strip (share card rows + summary rows): 2 clue boxes, ✕…✓, M/·
+   ====================================================================================== */
+.strip { display: inline-flex; align-items: center; gap: 8px; font: 400 var(--fs-body)/var(--lh-body) var(--font-mono); white-space: nowrap; }
+.strip-boxes { display: inline-flex; gap: 6px; }
+.strip-boxes > i { width: 12px; height: 12px; border: 1px solid var(--slate-500); }
+.strip-boxes > i.is-used { background: var(--slate-500); }
+.strip-guess { min-width: 4ch; }
+.strip-guess > .is-wrong { color: var(--state-error); }
+.strip-guess > .is-right { color: var(--accent); }
+.strip-method { min-width: 1ch; text-align: right; }
+.strip-method.is-right { color: var(--ink); }
+.strip-method.is-off { color: var(--ink-muted); }
+.strip.is-sm { gap: 6px; font-size: var(--fs-label); }
+.strip.is-sm .strip-boxes { gap: 3px; }
+.strip.is-sm .strip-boxes > i { width: 8px; height: 8px; }
+
+/* ======================================================================================
+   Share sheet (handoff screen 4)
+   ====================================================================================== */
+.share-card {
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 20px;
+  background: var(--surface-canvas);
+  border: 1px solid var(--hairline); border-radius: var(--radius-md);
+}
+.share-rows { display: flex; flex-direction: column; gap: 6px; }
+.share-row { display: grid; grid-template-columns: 14px minmax(0, 1fr); align-items: center; gap: 6px; min-height: 16px; }
+.share-row .strip { display: flex; }
+.share-row .strip-method { margin-left: auto; }
+.share-foot { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-top: 10px; border-top: 1px solid var(--hairline); }
+.share-total { font: 400 var(--fs-title)/var(--lh-title) var(--font-mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+.share-text {
+  margin: 0; padding: 10px 12px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--hairline); border-radius: var(--radius-md);
+  white-space: pre-wrap;
+  -webkit-user-select: text; user-select: text;
+}
+
+/* ======================================================================================
+   Day summary
+   ====================================================================================== */
+.summary-screen { background: var(--surface-canvas); }
+.summary { padding-bottom: calc(32px + var(--safe-bottom)); }
+.summary-score-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; min-height: 28px; }
+.summary-score { font: 400 var(--fs-title)/var(--lh-title) var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.summary-pb { transform-origin: left center; }
+.summary-rows {
+  display: flex; flex-direction: column;
+  background: var(--surface-panel);
+  border: 1px solid var(--hairline); border-radius: var(--radius-md);
+}
+.summary-row {
+  display: grid; grid-template-columns: 14px minmax(0, 1fr) auto 40px 8px; align-items: center; gap: 10px;
+  min-height: 56px; padding: 8px 12px;
+  border-top: 1px solid var(--hairline);
+  text-align: left;
+}
+.summary-row:first-child { border-top: 0; }
+.summary-row:focus-visible { outline-offset: -3px; border-radius: var(--radius-md); }
+.summary-row:disabled { opacity: 0.45; }
+.summary-n { font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); color: var(--ink-muted); }
+.summary-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.summary-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* real type names run long ("Output cell (ELL projection neuron)"): up to 2 lines before the ellipsis */
+.summary-name > .t-card {
+  white-space: normal;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+}
+.summary-pts { font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); text-align: right; font-variant-numeric: tabular-nums; }
+/* small phones (320 px): the strip moves under the name, so a long type name keeps ~170 px instead of ~95 */
+@media (max-width: 359px) {
+  .summary-row { grid-template-columns: 14px minmax(0, 1fr) 40px 8px; row-gap: 4px; }
+  .summary-row > .summary-n { grid-row: 1 / span 2; }
+  .summary-row > .summary-name { grid-column: 2; grid-row: 1; }
+  .summary-row > .strip { grid-column: 2; grid-row: 2; justify-self: start; }
+  .summary-row > .summary-pts { grid-column: 3; grid-row: 1 / span 2; }
+  .summary-row > .summary-chev { grid-column: 4; grid-row: 1 / span 2; }
+}
+.summary-chev { font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); color: var(--slate-500); }
+.summary-streak { padding: 12px; }
+.summary-xp { padding: 12px; } /* XP and level (js/ui/xp-bar.js, css/progress-bars.css) */
+.summary-next { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+
+/* ======================================================================================
+   Report sheet
+   ====================================================================================== */
+.report-reasons { gap: 8px 6px; }
+.report-note {
+  height: auto; min-height: 88px; padding: 10px 12px;
+  font: 400 var(--fs-body)/var(--lh-body) var(--font-sans);
+  resize: vertical;
+}
+.report-count { align-self: flex-end; font-size: var(--fs-micro); color: var(--ink-muted); }
+.report-count.t-warn { color: var(--state-warn); }
+.report-done { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
+.report-done .overline { display: inline-flex; align-items: center; gap: 6px; }
+.report-mark { display: inline-flex; width: 1em; height: 1em; }

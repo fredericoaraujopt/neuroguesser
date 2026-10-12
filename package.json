@@ -1,0 +1,12 @@
+{
+  "name": "neuroguesser",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NeuroGuesser PWA app shell (no build step; this file only configures the unit tests).",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "serve": "python3 -m http.server 5173"
+  }
+}
