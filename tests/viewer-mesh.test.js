@@ -237,10 +237,10 @@ test('in context today’s cell stays dominant: inflated surface + sunken keylin
   assert.equal(cell.customProgramCacheKey(), 'ng-inflate');
 });
 
-test('labelRect: point labels right or left of their dot, plane labels by their text only', () => {
+test('labelRect: point labels right or left of their leader line, plane labels by their text only', () => {
   const pt = { kind: 'point', x: 100, y: 50, w: 40, h: 14 };
-  assert.deepEqual(mv.labelRect(pt, 'right'), [98, 43, 138, 57]);
-  assert.deepEqual(mv.labelRect(pt, 'left'), [62, 43, 102, 57]);
+  assert.deepEqual(mv.labelRect(pt, 'right'), [100, 42, 140, 56]);
+  assert.deepEqual(mv.labelRect(pt, 'left'), [60, 42, 100, 56]);
   assert.deepEqual(mv.labelRect({ kind: 'plane', x: 10, y: 20, w: 30, h: 17 }), [16, 23, 40, 37]);
 });
 
@@ -276,12 +276,12 @@ test('layoutLabels: nearest to today’s cell first; the rest move to the other 
   const near = mk(100, 60, 40);
   assert.deepEqual(mv.layoutLabels([near], { width: 375, soft: [[100, 40, 200, 80]] }), ['left']);
   const prevRight = mk(100, 60, 40, 'right');
-  assert.deepEqual(mv.layoutLabels([prevRight], { width: 375, soft: [[137, 40, 200, 80]] }), ['right'], 'a 1 px gain does not flip it');
+  assert.deepEqual(mv.layoutLabels([prevRight], { width: 375, soft: [[139, 40, 200, 80]] }), ['right'], 'a 1 px gain does not flip it');
 });
 
 test('layoutLabels: a shown label holds its side while it only uses up the gap; it never overlaps', () => {
   const a = { kind: 'point', x: 100, y: 100, w: 40, h: 14, prev: 'right', priority: 0 };
-  // a's rect ends at x = 138; b's right rect starts at b.x − 2, i.e. d = b.x − 140 px after it (d < 0: overlap)
+  // a's rect ends at x = 140; b's right rect starts at b.x, i.e. d = b.x − 140 px after it (d < 0: overlap)
   const at = (d, prev) => ({ kind: 'point', x: 140 + d, y: 100, w: 40, h: 14, prev, priority: 1 });
   const wide = { width: 1000 };
   assert.ok(mv.LABEL_HOLD_PX <= mv.LABEL_GAP_PX, 'the hold may use the gap, never go past it');
@@ -295,7 +295,21 @@ test('layoutLabels: a shown label holds its side while it only uses up the gap; 
   assert.equal(mv.layoutLabels([a, at(-1, 'right')], wide)[1], null);
   // the soma marker obstacle gets the same rule
   const s = { kind: 'point', x: 100, y: 100, w: 30, h: 14, prev: 'right', priority: 0 };
-  assert.deepEqual(mv.layoutLabels([s], { obstacles: [[60, 90, 98.5, 110]], width: 1000 }), [null], 'held label 0.5 px into the marker, and no room left of it: hidden');
+  assert.deepEqual(mv.layoutLabels([s], { obstacles: [[60, 90, 100.5, 110]], width: 1000 }), [null], 'held label 0.5 px into the marker, and no room left of it: hidden');
+});
+
+test('layoutLabels: a region named in both hemispheres is labelled once, on the side nearest today’s cell', () => {
+  const cell = { x: 100, y: 100 };
+  const mk = (text, x, y) => {
+    const it = { kind: 'point', text, x, y, w: 30, h: 14, prev: null };
+    it.priority = mv.labelPriority(it, cell);
+    return it;
+  };
+  const items = [mk('ME', 300, 100), mk('ME', 120, 100), mk('LA', 20, 160), mk('LA', 360, 160), mk('AL', 200, 40)];
+  assert.deepEqual(mv.layoutLabels(items, { width: 1000 }), [null, 'right', 'right', null, 'right']);
+  // plane labels and unnamed items are never merged
+  const planes = [{ kind: 'plane', text: '', x: 0, y: 0, w: 20, h: 14, priority: -1e6 }, { kind: 'plane', text: '', x: 0, y: 50, w: 20, h: 14, priority: -1e6 }];
+  assert.deepEqual(mv.layoutLabels(planes, { width: 1000 }), ['right', 'right']);
 });
 
 test('labelPriority: hysteresis keeps a shown label ahead of an equally near hidden one', () => {

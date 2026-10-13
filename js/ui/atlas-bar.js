@@ -128,8 +128,8 @@ export function AtlasBar({ species, roundId = null, fresh = false, class: klass 
     <div class="atlas-top" aria-hidden="true">
       <span class="atlas-sp">${species} atlas</span>
       <span class="atlas-right">
-        ${added > 0 ? html`<span class="chip-mono atlas-new" ref=${chipRef}>+${added} new type${added > 1 ? 's' : ''}</span>` : null}
-        <span class=${cx('atlas-num', added > 0 && 'is-up')}>${shown}/${total}</span>
+        ${added > 0 ? html`<span class="chip-mono atlas-new" ref=${chipRef}>${added > 1 ? `${added} new types` : 'New type'}</span>` : null}
+        <span class=${cx('atlas-num', added > 0 && 'is-up')}>${shown} / ${total}</span>
       </span>
     </div>
     <div class="meter atlas-meter" aria-hidden="true"><span style=${{ transform: `scaleX(${frac})` }}></span></div>

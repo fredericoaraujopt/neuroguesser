@@ -2,14 +2,14 @@
    Subset of design_handoff_neuron_daily/charcoal/tokens.css (generated from tokens.json; values copied
    verbatim) plus the app type scale from the handoff README. Never type a hex outside this file. */
 
-/* Web subsets of Liberation Sans / Mono 2.1.5 (fonts/build-subsets.py: Latin-1, Latin Extended-A, Greek,
-   punctuation, arrows, maths, shapes; 22-24 KB each instead of 320-416 KB of TTF). Renamed "NG Sans" / "NG Mono"
-   because a subset may not use the OFL Reserved Font Name (fonts/OFL.txt). A glyph outside them (✓ ✕ ⤢ …,
-   Cyrillic) falls back per character to the rest of --font-sans / --font-mono. */
-@font-face { font-family: "NG Sans"; src: url("../fonts/NGSans-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "NG Sans"; src: url("../fonts/NGSans-Bold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
-@font-face { font-family: "NG Sans"; src: url("../fonts/NGSans-Italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
-@font-face { font-family: "NG Mono"; src: url("../fonts/NGMono-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+/* App Design Guide (12 Oct 2026): Figtree for all UI text (400 / 600 / 700, italic 400), Geist Mono for numerals only
+   (400 / 500). Web subsets of the OFL variable fonts from google/fonts (fonts/build-app-fonts.py: Latin-1, Latin
+   Extended-A, punctuation, arrows, maths, shapes; 13-21 KB each). A glyph outside them (Greek letters, ✓ ✕ ⤢ …) falls
+   back per character to the rest of --font-sans / --font-mono. The Liberation subsets (NG Sans / NG Mono) are no
+   longer loaded. */
+@font-face { font-family: "Figtree"; src: url("../fonts/Figtree-Var.woff2") format("woff2"); font-weight: 400 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Figtree"; src: url("../fonts/Figtree-Italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("../fonts/GeistMono-Var.woff2") format("woff2"); font-weight: 400 500; font-style: normal; font-display: swap; }
 
 :root, [data-theme="app-dark"] {
   --surface-canvas: #1c222b;
@@ -59,22 +59,28 @@
   --shadow-none: none;
   --shadow-raised: 0 10px 30px rgba(0, 0, 0, 0.40);
 
-  --font-sans: "NG Sans", "Liberation Sans", Arimo, "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-mono: "NG Mono", "Liberation Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: Figtree, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, Menlo, monospace;
 
-  /* type scale (v1.3, ARCHITECTURE.md 3.4 item 6): Charcoal token sizes only (10, 11, 12, 13, 18, 23, 32 px), by
-     role, no multipliers. These are the phone steps (< 1024 px); css/desktop.css switches micro (12 / 1.5), reading
-     text (18) and the screen title (23) at 1024 px. Each role's line height travels with its size (--lh-*), and the
-     screens' CSS uses only these tokens (font: <400|700> var(--fs-x)/var(--lh-y) var(--font-sans|mono)). Numerals
-     (Mono) use the same steps. Data figures keep Charcoal's figure sizes in their own units (--fs-fig-*), and the
-     share-card canvas draws at 11 / 13 / 18. tests/charcoal-type.test.js enforces all of this. */
-  --fs-micro: 11px;    --lh-micro: 1.35;   /* micro: captions, state words, legends */
-  --fs-label: 12px;    --lh-label: 1.5;    /* label, overline (mono uppercase), small numerals */
-  --fs-body: 13px;     --lh-body: 1.3;     /* controls & body UI: option text, buttons, tabs, list rows */
-  --fs-card: 13px;     --lh-card: 1.25;    /* card title / option label (700) */
-  --fs-read: 13px;     --lh-read: 1.45;    /* reading text: trivia facts, How-it-was-made prose, onboarding, review fact */
-  --fs-title: 18px;    --lh-title: 1.25;   /* screen title, large numerals */
-  --fs-name: 23px;     --lh-name: 1.25;    /* the cell's name on the reveal */
+  /* type scale. Phones (< 1024 px) follow the App Design Guide (12 Oct 2026): app-title 28 / 700 (the cell's name),
+     app-headline and app-body 17 (section headers, primary button; facts and explanations), app-secondary 15 (sub-lines,
+     list rows, tabs, segmented controls), app-caption 13 (chips, keys, captions, labels in the viewer), app-tab 12
+     (bottom tab bar); nothing under 11 px, body text never under 15. css/desktop.css restores the laptop steps
+     (ARCHITECTURE.md 3.4 item 6: Charcoal sizes 12 / 13 / 18 / 23) at 1024 px, so the web layout is unchanged. Each
+     role's line height travels with its size (--lh-*), and the screens' CSS uses only these tokens
+     (font: <400|600|700> var(--fs-x)/var(--lh-y) var(--font-sans|mono)). Weights: 400 reading, 600 emphasis and
+     active states, 700 only for the cell's name. Data figures keep Charcoal's figure sizes in their own units
+     (--fs-fig-*). tests/charcoal-type.test.js enforces all of this. */
+  --fs-micro: 13px;    --lh-micro: 1.4;    /* app-caption: captions, state words, chips, keys, viewer labels */
+  --fs-label: 13px;    --lh-label: 1.4;    /* app-caption: labels, overlines (sentence case, sans), small numerals */
+  --fs-body: 15px;     --lh-body: 1.35;    /* app-secondary: controls & body UI: option text, tabs, list rows */
+  --fs-card: 15px;     --lh-card: 1.35;    /* app-secondary 600: card title / option label */
+  --fs-read: 17px;     --lh-read: 1.4;     /* app-body: trivia facts, Method prose, onboarding, review fact */
+  --fs-tab: 12px;      --lh-tab: 1.2;      /* app-tab: the bottom tab bar (phones only) */
+  --h-btn: 56px;       --h-btn-sm: 52px;   /* touch button heights (v0.6.1); desktop.css: 48 / 44 */
+  --h-chip: 52px;                          /* large chips (method answers, filters) on touch; desktop.css: 44 */
+  --fs-title: 17px;    --lh-title: 1.3;    /* app-headline: screen title, section headers, primary button, large numerals */
+  --fs-name: 28px;     --lh-name: 1.15;    /* app-title: the cell's name on the reveal */
   --fs-icon: 18px;                         /* glyph buttons (expand, close); line height --lh-title */
   --fs-icon-lg: 23px;                      /* large glyph buttons (zoom + / −) */
   --fs-display: 32px;  --lh-display: 1.18; /* milestone numeral */
@@ -84,7 +90,7 @@
      viewer, the diagram-label step); the ephys trace's ticks are 8 in its viewBox */
   --fs-fig-graph: 10px;
   --fs-fig-tick: 8px;
-  --fs-graph: 10px;
+  --fs-graph: 11px;   /* the guide's 11 px floor on phones */
 
   /* app layout */
   --column-max: 480px;
@@ -104,8 +110,8 @@
 
 /* Type roles (v1.3; the numeral class names keep the handoff's phone sizes: t-num-11 = label step, t-num-13 = body,
    t-num-18 = title) */
-.t-title    { font: 700 var(--fs-title)/var(--lh-title) var(--font-sans); }
-.t-card     { font: 700 var(--fs-card)/var(--lh-card) var(--font-sans); }
+.t-title    { font: 600 var(--fs-title)/var(--lh-title) var(--font-sans); }
+.t-card     { font: 600 var(--fs-card)/var(--lh-card) var(--font-sans); }
 .t-body     { font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); }
 .t-read     { font: 400 var(--fs-read)/var(--lh-read) var(--font-sans); }
 .t-label    { font: 400 var(--fs-label)/var(--lh-label) var(--font-sans); }
@@ -114,9 +120,9 @@
 .t-num-11   { font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); }
 .t-num-13   { font: 400 var(--fs-body)/var(--lh-body) var(--font-mono); }
 .t-num-18   { font: 400 var(--fs-title)/var(--lh-title) var(--font-mono); }
-.t-overline { font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); text-transform: uppercase; color: var(--ink-muted); }
+.t-overline { font: 400 var(--fs-label)/var(--lh-label) var(--font-sans); color: var(--ink-muted); } /* sentence case, never mono (guide §1) */
 .t-gene     { font: italic 400 var(--fs-label)/var(--lh-label) var(--font-sans); }
-.t-strong   { font-weight: 700; }
+.t-strong   { font-weight: 600; }
 .t-muted    { color: var(--ink-muted); }
 .t-soft     { color: var(--slate-200); }
 .t-accent   { color: var(--accent); }

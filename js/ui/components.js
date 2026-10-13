@@ -1,5 +1,5 @@
 // Shared Charcoal components (ARCHITECTURE.md §1.1 ui/components.js). Class names live in css/app.css.
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useState } from 'preact/hooks';
 import { html, cx } from './html.js';
 import { useStore, store } from '../store.js';
 import { haptic } from '../fx/haptics.js';
@@ -145,6 +145,7 @@ export function Countdown({ to, class: klass }) {
 
 /** Bottom tab bar: Today · Library · Ranks. Library shows "· N" when reviews are due. */
 export function TabBar({ active, dueCount = 0 }) {
+  const [more, setMore] = useState(false);
   const tabs = [
     { id: 'today', label: 'Today', href: '#/today' },
     { id: 'library', label: 'Library', href: '#/library', badge: dueCount > 0 ? ` · ${dueCount}` : '' },
@@ -154,8 +155,38 @@ export function TabBar({ active, dueCount = 0 }) {
     ${tabs.map((t) => html`<a key=${t.id} href=${t.href} class=${cx('tab', active === t.id && 'is-active')}
       aria-current=${active === t.id ? 'page' : null}
       aria-label=${t.badge ? `${t.label}, ${dueCount} due for review` : t.label}
-      onClick=${() => haptic('selection')}><span>${t.label}${t.badge ? html`<span class="tab-badge">${t.badge}</span>` : null}</span></a>`)}
+      onClick=${() => { setMore(false); haptic('selection'); }}><span>${t.label}${t.badge ? html`<span class="tab-badge">${t.badge}</span>` : null}</span></a>`)}
+    <button type="button" class=${cx('tab', 'tab-more', more && 'is-open')} aria-haspopup="menu" aria-expanded=${more ? 'true' : 'false'}
+      aria-label="More: feedback, share, settings" onClick=${() => { haptic('selection'); setMore(!more); }}><span>⋯ More</span></button>
+    ${more ? html`<${MoreMenu} onClose=${() => setMore(false)} />` : null}
   </nav>`;
+}
+
+const dayDone = (t) => !!t && Array.isArray(t.rounds) && t.rounds.length > 0
+  && t.rounds.every((_, i) => !!(t.progress || [])[i] && t.progress[i].stage === 'done');
+
+/**
+ * The tab bar's ⋯ menu (App Design Guide §4, phones): Feedback, Share (once today's five rounds are done) and Settings
+ * live here instead of in a persistent bar. The laptop has no tab bar; its header keeps the Feedback pill and Profile.
+ */
+export function MoreMenu({ onClose }) {
+  const today = useStore((s) => s.today);
+  const share = dayDone(today);
+  // a layout effect: the listener is there before the next key press (a plain effect waits for a frame)
+  useLayoutEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+  const pick = (fn) => () => { haptic('selection'); onClose(); fn(); };
+  return html`<div class="more-scrim" onClick=${onClose}></div>
+    <div class="more-menu" role="menu" aria-label="More">
+      <button type="button" role="menuitem" class="more-item"
+        onClick=${pick(() => import('../feedback.js').then((m) => m.openFeedback({})).catch(() => {}))}>Feedback</button>
+      ${share ? html`<button type="button" role="menuitem" class="more-item"
+        onClick=${pick(() => store.update('ui', { sheet: { id: 'share', props: {} } }))}>Share result</button>` : null}
+      <a role="menuitem" class="more-item" href="#/settings" onClick=${() => { haptic('selection'); onClose(); }}>Settings</a>
+    </div>`;
 }
 
 /** Toast host: renders store.ui.toast ({ text, kind, glyph }). Use showToast() from store.js. */

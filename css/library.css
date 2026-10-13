@@ -52,7 +52,7 @@
 .lib-atlas-row { display: grid; grid-template-columns: 72px minmax(0, 1fr) 52px; align-items: center; gap: 10px; min-height: 16px; }
 .lib-atlas-row > .sp { font: 400 var(--fs-label)/var(--lh-label) var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lib-atlas-row > .num { font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); color: var(--slate-300); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.lib-atlas-row > .num.is-up { color: var(--accent); }
+.lib-atlas-row > .num.is-up { color: var(--ink); } /* counts in ink (App Design Guide §3) */
 
 /* cell grid (2 columns) */
 .lib-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
@@ -69,7 +69,7 @@
 @media (hover: hover) { .lib-card:hover { border-color: var(--slate-600); } }
 .lib-card:active { border-color: var(--slate-500); }
 .lib-card-body { flex: 1; display: flex; flex-direction: column; gap: 3px; width: 100%; min-width: 0; padding: 8px 10px 10px; }
-.lib-card-name { font: 700 var(--fs-card)/var(--lh-card) var(--font-sans); color: var(--ink); overflow-wrap: anywhere; }
+.lib-card-name { font: 600 var(--fs-card)/var(--lh-card) var(--font-sans); color: var(--ink); overflow-wrap: anywhere; }
 .lib-card-sub { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); overflow-wrap: anywhere; }
 .lib-card-foot { margin-top: auto; display: flex; justify-content: space-between; align-items: baseline; gap: 6px; padding-top: 4px; }
 .lib-card-day { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--ink-muted); white-space: nowrap; }
@@ -165,7 +165,7 @@
 .rv-option-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .rv-option-label { font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); overflow-wrap: anywhere; }
 .rv-option-sub { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); overflow-wrap: anywhere; }
-.rv-option.is-answer .rv-option-label { font-weight: 700; }
+.rv-option.is-answer .rv-option-label { font-weight: 600; }
 .rv-mark { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-micro); }
 .rv-check { display: inline-flex; width: 1em; height: 1em; }
 .rv-check .fx-check { width: 1em; height: 1em; }
@@ -178,6 +178,6 @@
   display: flex; flex-direction: column; justify-content: center; gap: 12px;
   padding: 24px 24px calc(24px + var(--safe-bottom));
 }
-.rv-done-num { display: inline-block; min-width: 0.6em; color: var(--accent); }
+.rv-done-num { display: inline-block; min-width: 0.6em; color: var(--ink); }
 .rv-done-btn { margin-top: 12px; }
 .rv-state .btn:first-of-type { margin-top: 12px; }

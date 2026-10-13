@@ -25,12 +25,12 @@ function mediaBlock(css, query) {
   throw new Error('unbalanced braces');
 }
 
-test('tokens: the v1.3 phone steps (micro 11, label 12, body 13, card 13, reading 13, title 18, name 23), no multiplier', () => {
-  const steps = { micro: 11, label: 12, body: 13, card: 13, read: 13, title: 18, name: 23 };
+test('tokens: the phone steps (App Design Guide, v0.7.0: caption 13, secondary 15, body 17, headline 17, title 28, tab 12), no multiplier', () => {
+  const steps = { micro: 13, label: 13, body: 15, card: 15, read: 17, title: 17, name: 28, tab: 12 };
   assert.doesNotMatch(tokens, /--type-k/);
   for (const [name, px] of Object.entries(steps)) assert.match(tokens, new RegExp(`--fs-${name}: ${px}px;`), name);
-  assert.match(tokens, /\.t-body\s*\{ font: 400 var\(--fs-body\)\/var\(--lh-body\) /, 'body 13/1.3');
-  assert.match(tokens, /\.t-title\s*\{ font: 700 var\(--fs-title\)\//);
+  assert.match(tokens, /\.t-body\s*\{ font: 400 var\(--fs-body\)\/var\(--lh-body\) /, 'body 15/1.35');
+  assert.match(tokens, /\.t-title\s*\{ font: 600 var\(--fs-title\)\//);
   assert.match(tokens, /\.t-num-11\s*\{ font: 400 var\(--fs-label\)\/var\(--lh-label\) var\(--font-mono\)/, 'numerals at the same steps');
 });
 
@@ -51,7 +51,10 @@ test('desktop.css: a 640 px column from 600 px (phone type); laptop type steps, 
   assert.doesNotMatch(mid, /--fs-|--type-k/, 'phone type steps up to 1023 px');
   assert.match(mid, /--column-max: 640px;/);
   const wide = mediaBlock(desktop, 'min-width: 1024px');
-  assert.match(wide, /html:root \{[^}]*--fs-micro: 12px; --lh-micro: 1\.5; --fs-read: 18px; --fs-title: 23px;/, 'micro 12/1.5, reading 18, title 23');
+  // the laptop keeps its pre-v0.7.0 steps: micro / label 12, body / card 13, reading 18, title and name 23
+  const lap = /html:root \{([^}]*)\}/.exec(wide)[1];
+  for (const want of ['--fs-micro: 12px', '--lh-micro: 1.5', '--fs-label: 12px', '--fs-body: 13px', '--lh-body: 1.3', '--fs-card: 13px',
+    '--fs-read: 18px', '--lh-read: 1.45', '--fs-title: 23px', '--fs-name: 23px']) assert.ok(lap.includes(want), want);
   assert.match(wide, /--header-h: 56px;/);
   assert.match(wide, /--pane-w: clamp\(440px, [^,]+, 520px\);/, 'content column 440–520 px');
   assert.match(wide, /\.app-root > \.tabbar \{ display: none; \}/);

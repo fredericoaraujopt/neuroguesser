@@ -22,7 +22,8 @@ export const SOFTWARE_CREDITS = Object.freeze([
   Object.freeze({ name: 'htm', licence: 'Apache-2.0', url: 'https://github.com/developit/htm' }),
   Object.freeze({ name: 'three.js', licence: 'MIT', url: 'https://threejs.org' }),
   Object.freeze({ name: 'meshoptimizer decoder', licence: 'MIT', url: 'https://github.com/zeux/meshoptimizer' }),
-  Object.freeze({ name: 'Liberation Sans and Mono', licence: 'SIL OFL 1.1', url: 'https://github.com/liberationfonts/liberation-fonts' }),
+  Object.freeze({ name: 'Figtree', licence: 'SIL OFL 1.1', url: 'https://github.com/erikdkennedy/figtree' }),
+  Object.freeze({ name: 'Geist Mono', licence: 'SIL OFL 1.1', url: 'https://github.com/vercel/geist-font' }),
 ]);
 
 export default CREDITS;

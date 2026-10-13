@@ -19,10 +19,10 @@
   border: 1px solid var(--accent); border-radius: var(--radius-md);
 }
 .rk-me.is-empty { border-color: var(--hairline); }
-.rk-me-rank { font: 400 var(--fs-title)/var(--lh-title) var(--font-mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+.rk-me-rank { font: 400 var(--fs-title)/var(--lh-title) var(--font-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
 .rk-me.is-empty .rk-me-rank { color: var(--ink-muted); }
 .rk-me-who { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.rk-me-name { font: 700 var(--fs-card)/var(--lh-card) var(--font-sans); }
+.rk-me-name { font: 600 var(--fs-card)/var(--lh-card) var(--font-sans); }
 .rk-me-sub { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); }
 .rk-me-note { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--accent); }
 .rk-me-score { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
@@ -86,7 +86,7 @@ button.rk-row:focus-visible { outline-offset: -2px; }
   font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--slate-300);
 }
 .rk-who { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.rk-name { font: 700 var(--fs-card)/var(--lh-card) var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rk-name { font: 600 var(--fs-card)/var(--lh-card) var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rk-sub { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rk-score { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .rk-total { font: 400 var(--fs-body)/var(--lh-body) var(--font-mono); font-variant-numeric: tabular-nums; }
@@ -243,7 +243,7 @@ button.rk-row:focus-visible { outline-offset: -2px; }
   border-bottom: 2px solid transparent;
 }
 .ob-cluebar > span.is-active { border-bottom-color: var(--accent); }
-.ob-cluebar b { font: 700 var(--fs-card)/var(--lh-card) var(--font-sans); }
+.ob-cluebar b { font: 600 var(--fs-card)/var(--lh-card) var(--font-sans); }
 .ob-cluebar span > span { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); }
 
 /* panel 2: method chips */

@@ -92,7 +92,7 @@ function GraceBanner({ today }) {
 function LoadingState() {
   return html`<div class="screen today-loading" aria-busy="true">
     <div class="viewer">
-      <div class="viewer-top" aria-hidden="true"><span class="viewer-label">NEUROGUESSER</span><span class="viewer-points">— <small>pts</small></span></div>
+      <div class="viewer-top" aria-hidden="true"><span class="viewer-label">NeuroGuesser</span><span class="viewer-points">— <small>pts</small></span></div>
       <span class="t-micro t-muted" role="status">Loading today's neurons…</span>
     </div>
     <div class="question" aria-hidden="true">

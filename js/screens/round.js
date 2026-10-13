@@ -10,14 +10,14 @@
 //   ui.holdRound   (store) keeps this screen up ~1 s (3 s cap) after the method pick, so "+200" can fly into the
 //                  points readout before today.js hands off to the reveal (cleared on every path + unmount).
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import { html, cx, loadCss, upperLatin } from '../ui/html.js';
+import { html, cx, loadCss } from '../ui/html.js';
 import { store, useStore, openSheet, showToast } from '../store.js';
 import { Button, GhostButton, Legend, ScaleBar, OfflineChip } from '../ui/components.js';
 import { MESH_STEPS } from '../viewer/scalebar.js';
 import { Sheet } from '../ui/sheet.js';
 import { TodayProgress } from '../ui/day-progress.js';
 import {
-  guess, chooseMethod, openClue, optionStates, optionsLeft, guessesLeft, pointsOf, outcomeOf, loadToday,
+  guess, chooseMethod, openClue, optionStates, guessesLeft, pointsOf, outcomeOf, loadToday,
 } from '../game.js';
 import * as api from '../api.js';
 import { METHOD_NAMES, METHOD_BLURBS, fmtPts, fmtSigned, methodName } from '../format.js';
@@ -399,7 +399,6 @@ function RoundScreen({ n, round }) {
     question = html`<div class="question" key="type">
       <div class="row-between">
         <h1 class="t-title round-h">Which cell?</h1>
-        ${stage === 'type' ? html`<span class="t-num-11 t-muted">${optionsLeft(round, state)} left</span>` : null}
       </div>
       ${status ? html`<span class="status-line" role="status">${status}</span>` : null}
       <${OptionGrid} round=${round} states=${states} pick=${pick} shakeId=${shakeId} beat=${beat}
@@ -447,24 +446,18 @@ function RoundScreen({ n, round }) {
       busy=${busyAny} maskOn=${maskOn} setMaskOn=${setMaskOn} readout=${readout}
       onTypeTab=${(id) => { if (id !== activeTypeTab) { haptic('selection'); setTypeTab(id); } }}
       onMethodTab=${(id) => { if (id !== methodTab) { haptic('selection'); setMethodTab(id); } }} />
-    <div class="round-scroll" ref=${scrollRef}><${TodayProgress} playing=${n} class="in-round" />${question}</div>
+    <div class="round-scroll" ref=${scrollRef}><${TodayProgress} playing=${n} showTotal=${false} class="in-round" />${question}</div>
     ${lockBar}
   </div>`;
 }
 
 // ------------------------------------------------------------------------------- question parts
 
-/** A type name inside an uppercase overline: Latin letters upper-cased, Greek kept ("γ KENYON CELL", not
- *  "Γ KENYON CELL"); screen readers get the name as written. */
-function OverlineName({ label }) {
-  return html`<span class="keep-case" aria-hidden="true">${upperLatin(label)}</span><span class="sr-only">${label}</span>`;
-}
-
 function Verdict({ exhausted, label, pts, named, stampRef }) {
   return html`<div class="round-verdict" role="status">
     ${exhausted
-      ? html`<span class="overline is-error">✕ It was <${OverlineName} label=${label} /> · 0 pts</span>`
-      : html`<span class="overline is-accent">✓ <${OverlineName} label=${label} /> · <span class="t-num">${fmtPts(pts)}</span> pts · bonus +200</span>`}
+      ? html`<span class="round-verdict-text is-error">✕ It was ${label} · 0 pts</span>`
+      : html`<span class="round-verdict-text is-accent">✓ ${label} · <span class="t-num">${fmtPts(pts)}</span> pts</span>`}
     ${named ? html`<span class="chip-mono round-stamp" ref=${stampRef}>Named ✓</span>` : null}
   </div>`;
 }
@@ -587,17 +580,15 @@ function Viewer({ n, round, state, memoState, online, mode, typeTab, methodTab, 
       pane = html`<${GraphPane} key="graph" asset=${clues.graph.asset} />`;
     } else {
       pane = html`<${MeshPane} key="mesh" round=${round} context=${ctx} memoState=${memoState} />`;
-      legend = ctx
-        ? [{ label: 'neuron', kind: 'line' }, { label: 'volume', kind: 'box' }]
-        : [{ label: 'neuron', kind: 'line' }];
+      legend = ctx ? [{ label: 'neuron', kind: 'line' }, { label: 'volume', kind: 'box' }] : null;   // a lone mesh needs no key (v0.6.1)
       expandMode = '3d';
     }
-    tabs = [{ id: 'mesh', label: 'Mesh', word: typeTab === 'mesh' ? 'Viewing' : 'Free', tone: typeTab === 'mesh' ? 'accent' : null, active: typeTab === 'mesh' }];
+    tabs = [{ id: 'mesh', label: 'Mesh', word: '', tone: typeTab === 'mesh' ? 'accent' : null, active: typeTab === 'mesh' }];
     for (const c of round.paid_clues) {
       const isOpen = opened.includes(c.kind);
       const active = isOpen && typeTab === c.kind;
       const canOpen = !isOpen && stage === 'type';
-      const word = active ? 'Viewing' : isOpen ? 'Opened' : !canOpen ? 'Locked' : !online ? 'Offline' : `−${c.cost}`;
+      const word = isOpen ? '' : !canOpen ? 'Locked' : !online ? 'Offline' : `−${c.cost}`;
       const disabled = !isOpen && (!canOpen || !online || busy);
       tabs.push({
         id: c.kind, label: CLUE_NAMES[c.kind] || c.kind, word, active, disabled,
@@ -622,14 +613,14 @@ function Viewer({ n, round, state, memoState, online, mode, typeTab, methodTab, 
   } else {
     if (methodTab === 'mesh') {
       pane = html`<${MeshPane} key="mesh" round=${round} context=${null} memoState=${memoState} />`;
-      legend = [{ label: 'neuron', kind: 'line' }];
+      legend = null;
       expandMode = '3d';
     } else if (emV1) {
       pane = html`<${EmPane} key="em" em=${emV1} plane=${methodTab} maskOn=${maskOn} setMaskOn=${setMaskOn} memoState=${memoState} />`;
       expandMode = 'em';
     }
     tabs = METHOD_TABS.map((t) => ({
-      ...t, active: methodTab === t.id, word: methodTab === t.id ? 'Viewing' : t.word, tone: methodTab === t.id ? 'accent' : null,
+      ...t, active: methodTab === t.id, word: t.word, tone: methodTab === t.id ? 'accent' : null,
       aria: `${t.aria}${methodTab === t.id ? ', viewing' : ''}`,
       onClick: () => onMethodTab(t.id),
     }));
@@ -656,7 +647,7 @@ function Viewer({ n, round, state, memoState, online, mode, typeTab, methodTab, 
   return html`<section class=${cx('viewer', 'round-viewer', em && 'is-em', em2 && 'is-em2')} aria-label="Specimen">
     <div class="viewer-canvas">${pane}</div>
     <div class="viewer-top">
-      <span class="round-tag"><span class="viewer-label">#${round.day_number} · ${n}/5</span><${OfflineChip} /></span>
+      <span class="round-tag"><span class="viewer-label">Day ${round.day_number}<span class="round-tag-n"> · Round ${n} of 5</span></span><${OfflineChip} /></span>
       ${readout}
     </div>
     ${legend ? html`<${Legend} class="viewer-legend" items=${legend} />` : null}

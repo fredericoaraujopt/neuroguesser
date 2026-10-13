@@ -96,6 +96,8 @@ const PANELS = [
     title: 'Scoring',
     body: 'Fewer clues and fewer wrong guesses score more. Ranks compare you with friends, your lab and everyone.',
     more: null,
+    // v0.6.1 (note 1ntJ…): who made it, and that it was vibe coded (Settings → About has the full notice)
+    credit: 'Made by Frederico Araujo. NeuroGuesser was vibe coded with AI help: the trivia quotes real papers, but check the source before relying on a fact.',
     Figure: ScoreFigure,
   },
 ];
@@ -184,8 +186,9 @@ export default function OnboardingSheet({ onClose, replay = false }) {
         <${Figure} />
         <span class="overline">${p.over}</span>
         <span class="sheet-title">${p.title}</span>
-        <span class="t-body t-soft">${p.body}</span>
-        ${p.more ? html`<span class="t-label t-muted">${p.more}</span>` : null}
+        <span class="t-read t-soft">${p.body}</span>
+        ${p.more ? html`<span class="t-body t-muted">${p.more}</span>` : null}
+        ${p.credit ? html`<span class="t-body t-soft ob-credit">${p.credit}</span>` : null}
         ${last && !replay ? html`<div class="field ob-name">
           <label for="ob-name">Name on the leaderboard <span class="t-muted">(optional)</span></label>
           <input id="ob-name" class="input" type="text" maxlength="24" autocomplete="nickname" spellcheck="false"

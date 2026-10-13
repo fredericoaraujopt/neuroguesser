@@ -19,7 +19,7 @@
  *
  * VERSION must equal version.js (tests/shell.test.js checks it; tests/sw.test.js tests the behaviour).
  */
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 const SHELL_CACHE = `ng-shell-${VERSION}`;
 const DAY_CACHE = 'ng-day-v1';
 const ASSET_CACHE = 'ng-asset-v1';
@@ -45,10 +45,9 @@ const SHELL = [
   'css/progress-bars.css',
   'css/desktop.css',
   'css/em2.css',
-  'fonts/NGSans-Regular.woff2',
-  'fonts/NGSans-Bold.woff2',
-  'fonts/NGSans-Italic.woff2',
-  'fonts/NGMono-Regular.woff2',
+  'fonts/Figtree-Var.woff2',
+  'fonts/Figtree-Italic.woff2',
+  'fonts/GeistMono-Var.woff2',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',

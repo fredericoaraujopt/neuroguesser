@@ -22,7 +22,7 @@
 .xp-up { transform-origin: left center; }
 .xp-gain {
   flex: none;
-  font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); font-variant-numeric: tabular-nums; color: var(--accent);
+  font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink);
   white-space: nowrap; text-align: right;
 }
 .xp-gain small { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); }
@@ -61,8 +61,7 @@
 /* ---------- atlas collection bar (reveal) ---------- */
 .atlas-bar { display: flex; flex-direction: column; gap: 6px; }
 .atlas-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 22px; }
-.atlas-sp { min-width: 0; font: 400 var(--fs-label)/var(--lh-label) var(--font-sans); color: var(--slate-200); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.atlas-sp { min-width: 0; font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); color: var(--slate-200); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .atlas-right { flex: none; display: inline-flex; align-items: center; gap: 8px; }
-.atlas-num { min-width: 5ch; font: 400 var(--fs-label)/var(--lh-label) var(--font-mono); font-variant-numeric: tabular-nums; color: var(--slate-300); text-align: right; }
-.atlas-num.is-up { color: var(--accent); }
+.atlas-num { min-width: 5ch; font: 400 var(--fs-body)/var(--lh-body) var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); text-align: right; } /* a count: ink */
 .atlas-new { transform-origin: right center; }

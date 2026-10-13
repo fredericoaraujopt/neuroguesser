@@ -183,7 +183,7 @@ test('observeAtlas: rounds done at first sight are a baseline; a round finishing
   store.set(initialState());
 });
 
-test('AtlasBar: "Fly atlas 25/56" with "+1 new type" on the fresh reveal of a new type; the plain count otherwise', async () => {
+test('AtlasBar: "Fly atlas 25 / 56" with "New type" on the fresh reveal of a new type; the plain count otherwise', async () => {
   ab._resetAtlasMemory();
   store.set(initialState());
   store.update('session', { me: withAtlas('Fly', 24) });
@@ -196,20 +196,20 @@ test('AtlasBar: "Fly atlas 25/56" with "+1 new type" on the fresh reveal of a ne
   assert.equal(bar.getAttribute('role'), 'img');
   assert.equal(bar.getAttribute('aria-label'), 'Fly atlas: 25 of 56 cell types collected, 1 new from this round');
   assert.equal(byClass(root, 'atlas-sp')[0].textContent, 'Fly atlas');
-  assert.equal(byClass(root, 'atlas-new')[0].textContent, '+1 new type');
-  assert.equal(byClass(root, 'atlas-num')[0].textContent, '25/56');
+  assert.equal(byClass(root, 'atlas-new')[0].textContent, 'New type');
+  assert.equal(byClass(root, 'atlas-num')[0].textContent, '25 / 56');
   assert.equal(byClass(root, 'atlas-num')[0].getAttribute('class'), 'atlas-num is-up');
   assert.equal(byClass(root, 'meter')[0].firstChild.style.transform, `scaleX(${25 / 56})`);
   // revisit (acknowledged reveal): the count, no "new"
   render(h(ab.AtlasBar, { species: 'Fly', roundId: 'roundNEW', fresh: false }), root);
   await flush();
   assert.equal(byClass(root, 'atlas-new').length, 0);
-  assert.equal(byClass(root, 'atlas-num')[0].textContent, '25/56');
+  assert.equal(byClass(root, 'atlas-num')[0].textContent, '25 / 56');
   // a type seen before (no record of growth): the count, no "new"
   render(h(ab.AtlasBar, { species: 'Mouse', roundId: 'roundOLD', fresh: true }), root);
   await flush();
   assert.equal(byClass(root, 'atlas-new').length, 0);
-  assert.equal(root.textContent, 'Mouse atlas4/11');
+  assert.equal(root.textContent, 'Mouse atlas4 / 11');
   // no atlas data (older Worker, /v1/me not loaded): nothing
   store.update('session', { me: { ...ME, atlas: undefined } });
   render(h(ab.AtlasBar, { species: 'Fly', roundId: 'roundNEW', fresh: true }), root);
@@ -227,10 +227,10 @@ test('AtlasBar: when /v1/me answers after the reveal has mounted, the bar grows 
   const root = createContainer();
   render(h(ab.AtlasBar, { species: 'Mouse', roundId: 'roundLATE', fresh: true }), root);
   await flush();
-  assert.equal(root.textContent, 'Mouse atlas4/11');
+  assert.equal(root.textContent, 'Mouse atlas4 / 11');
   store.update('session', { me: withAtlas('Mouse', 5) });
   await flush();
-  assert.equal(root.textContent, 'Mouse atlas+1 new type5/11');
+  assert.equal(root.textContent, 'Mouse atlasNew type5 / 11');
   render(null, root);
   store.set(initialState());
 });

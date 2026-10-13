@@ -119,7 +119,7 @@ export function _resetFills() { seen.clear(); }
  * changes what is shown. showTotal false hides the running total (the summary shows its own large total).
  * variant: 'inline' (round / reveal / summary) | 'header' (desktop top header).
  */
-export function DayProgress({ today, playing = null, showTotal = true, variant = 'inline', class: klass }) {
+export function DayProgress({ today, playing = null, round = null, showTotal = true, variant = 'inline', class: klass }) {
   const token = useRef(null);
   if (!token.current) token.current = { bar: (barSeq += 1) };
   const data = daySegments(today);
@@ -138,15 +138,19 @@ export function DayProgress({ today, playing = null, showTotal = true, variant =
   // never a frame of the old total)
   const shown = useCountUp(total, { from: fillScore > 0 && motionAllowed() ? total - fillScore : undefined, duration: 600 });
   if (!segs.length) return null;
-  return html`<div class=${cx('day-progress', `is-${variant}`, klass)} role="img"
+  // App Design Guide (12 Oct 2026) round strip: "Round 2 of 5" over the segments, the day's score once, in ink
+  const r = variant === 'inline' ? (Number.isInteger(round) ? round : Number.isInteger(playing) ? playing : null) : null;
+  const totalEl = showTotal ? html`<span class="dp-total" aria-hidden="true">${fmtPts(shown)} <small>pts</small></span>` : null;
+  return html`<div class=${cx('day-progress', `is-${variant}`, r && 'has-head', klass)} role="img"
     aria-label=${progressLabel(segs, showTotal ? total : null, { grace: !!(today && today.graceActive) })}>
+    ${r ? html`<div class="dp-head" aria-hidden="true"><span class="dp-round">Round ${r} of ${segs.length}</span>${totalEl}</div>` : null}
     <div class="dp-segs" aria-hidden="true">
       ${segs.map((s, i) => html`<span key=${s.index} class=${cx('dp-seg', `is-${s.state}`, filling[i] && DONE.has(s.state) && 'is-filling')}
         title=${`Round ${s.index} · ${WORDS[s.state]}${DONE.has(s.state) ? ` · ${fmtPts(s.score)} pts` : ''}`}>
         <i class="dp-fill"></i><span class="dp-glyph">${GLYPHS[s.state] || s.index}</span>
       </span>`)}
     </div>
-    ${showTotal ? html`<span class="dp-total" aria-hidden="true">${fmtPts(shown)} <small>pts</small></span>` : null}
+    ${r ? null : totalEl}
   </div>`;
 }
 

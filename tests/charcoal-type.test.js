@@ -1,7 +1,9 @@
 // Charcoal type scale (v1.3, ARCHITECTURE.md §3.4 item 6). Player note, 5 Oct: "the font and size of font does not seem
 // to follow charcoal's guidelines" → "tokens only, reading text at 18 on a laptop". A static scan of every stylesheet
 // (css/*.css) and module (js/**/*.js):
-//   1. the type tokens take Charcoal values only — sizes 10 / 11 / 12 / 13 / 18 / 23 / 32 px (data-figure tokens may
+// v0.7.0 (App Design Guide, 12 Oct 2026): phones (< 1024 px) take the guide's app scale — caption 13, secondary 15,
+// body / headline 17, title 28, tab 12 — in Figtree 400 / 600 / 700; the laptop (≥ 1024 px) keeps the Charcoal steps.
+//   1. the type tokens take Charcoal or app-scale values only — sizes 10 / 11 / 12 / 13 / 15 / 17 / 18 / 23 / 28 / 32 px (data-figure tokens may
 //      also use the figure sizes 6.67 / 8 / 9.33 / 10.67) and Charcoal's line heights; only tokens.css (:root) and the
 //      laptop steps in desktop.css define them, and nothing multiplies them (no --type-k, calc(), em/rem/%, zoom);
 //   2. at every width the roles resolve to the §3.4 table (phone < 1024 px, laptop ≥ 1024 px);
@@ -19,27 +21,28 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { appRoot } from './_importmap.js';
 
-const SIZES = [10, 11, 12, 13, 18, 23, 32];                 // Charcoal token sizes (px)
+const SIZES = [10, 11, 12, 13, 15, 17, 18, 23, 28, 32];   // Charcoal token sizes + the app scale (15 / 17 / 28) (px)
 const FIGURE_SIZES = [6.67, 8, 9.33, 10.67];               // Charcoal figure sizes, inside data figures only
-const LINE_HEIGHTS = [1.1, 1.18, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5]; // Charcoal roles (+ 1.45 reading text, §3.4)
-const WEIGHTS = ['400', '700'];                            // the Liberation faces (Regular, Bold; Italic 400)
+const LINE_HEIGHTS = [1.1, 1.15, 1.18, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45, 1.5]; // Charcoal roles (+ 1.45 reading text, §3.4)
+const WEIGHTS = ['400', '600', '700'];                     // Figtree: reading, emphasis / active, the cell's name
 
 // §3.4 item 6: [size px, line height] per role, phone (< 1024 px) and laptop (≥ 1024 px)
 const ROLES = {
-  micro: [[11, 1.35], [12, 1.5]],     // captions, state words, legends
-  label: [[12, 1.5], [12, 1.5]],      // labels, overlines (mono uppercase)
-  body: [[13, 1.3], [13, 1.3]],       // controls & body UI: option text, buttons, tabs, list rows
-  card: [[13, 1.25], [13, 1.25]],     // card title / option label (bold)
-  read: [[13, 1.45], [18, 1.45]],     // reading text: trivia, How-it-was-made prose, onboarding, review fact
-  title: [[18, 1.25], [23, 1.25]],    // screen title
-  name: [[23, 1.25], [23, 1.25]],     // the cell's name on the reveal
+  micro: [[13, 1.4], [12, 1.5]],      // app-caption: captions, state words, chips, keys, viewer labels
+  label: [[13, 1.4], [12, 1.5]],      // app-caption: labels, overlines (sentence case)
+  body: [[15, 1.35], [13, 1.3]],      // app-secondary: option text, tabs, list rows, segmented controls
+  card: [[15, 1.35], [13, 1.25]],     // card title / option label (600)
+  read: [[17, 1.4], [18, 1.45]],      // app-body: trivia, Method prose, onboarding, review fact
+  title: [[17, 1.3], [23, 1.25]],     // app-headline: screen title, section headers
+  name: [[28, 1.15], [23, 1.25]],     // app-title: the cell's name on the reveal
   display: [[32, 1.18], [32, 1.18]],  // milestone numeral
+  tab: [[12, 1.2], [12, 1.2]],        // app-tab: bottom tab bar (phones only)
 };
 const PHONE_WIDTHS = [320, 375, 390, 599, 600, 768, 1023];
 const LAPTOP_WIDTHS = [1024, 1280, 1512, 1920];
 
 // size token → the line-height token it is set with (a role's own; glyph buttons and fields borrow a role's)
-const PAIR = { micro: 'micro', label: 'label', body: 'body', card: 'card', read: 'read', title: 'title', name: 'name',
+const PAIR = { micro: 'micro', label: 'label', body: 'body', card: 'card', read: 'read', title: 'title', name: 'name', tab: 'tab',
   display: 'display', icon: 'title', 'icon-lg': 'title', 'field-touch': 'body', graph: 'micro' };
 // deliberate pairings outside PAIR (selector → [size token, line-height token])
 const PAIR_EXCEPTIONS = {
@@ -361,12 +364,17 @@ test('roles resolve to the §3.4 table at every width (phone < 1024 px, laptop >
       }
     }
   }
-  // what changes at 1024 px: micro 12/1.5, reading 18, title 23, and the graph clue's on-screen text (13)
+  // what changes at 1024 px: every text role returns to its laptop step (the phone app scale stops), and the graph clue's
+  // on-screen text (11 on phones, the guide's floor; 13 on a laptop); display, tab and the glyph sizes stay
   const phone = tokensAt(scan.decls, 1023);
   const laptop = tokensAt(scan.decls, 1024);
   const changed = Object.keys(laptop).filter((k) => laptop[k] !== phone[k]).sort();
-  assert.deepEqual(changed, ['--fs-graph', '--fs-micro', '--fs-read', '--fs-title', '--lh-micro']);
-  assert.equal(phone['--fs-graph'], '10px');
+  assert.deepEqual(changed, ['--fs-body', '--fs-card', '--fs-graph', '--fs-label', '--fs-micro', '--fs-name', '--fs-read', '--fs-title',
+    '--lh-body', '--lh-card', '--lh-label', '--lh-micro', '--lh-name', '--lh-read', '--lh-title']);
+  assert.equal(phone['--fs-graph'], '11px');
+  // App Design Guide floors on phones: nothing under 11 px, body text never under 15
+  for (const [k, v] of Object.entries(phone)) if (k.startsWith('--fs-') && !k.startsWith('--fs-fig-')) assert.ok(parseFloat(v) >= 11, `${k} ${v} on a phone`);
+  assert.ok(parseFloat(phone['--fs-read']) >= 15 && parseFloat(phone['--fs-body']) >= 15);
   assert.equal(laptop['--fs-graph'], '13px', 'graph clue labels read at 13 px (Charcoal diagram label) on a laptop');
   for (const k of Object.keys(laptop).filter((x) => x.startsWith('--fs-fig-'))) {
     assert.ok(near(parseFloat(laptop[k]), [...FIGURE_SIZES, ...SIZES]), `${k} is a figure size`);
@@ -398,7 +406,7 @@ test('the scanners flag what they are meant to (not a vacuous pass)', () => {
   assert.match(bad('.a { font-size: calc(var(--fs-body) * 1.15); }').join(), /font-size is not a token/);
   assert.match(bad('.a { font-size: 0.9em; }').join(), /font-size is not a token/);
   assert.match(bad('.a { font: 400 14px/1.4 var(--font-sans); }').join(), /font is not/);
-  assert.match(bad('.a { font: 600 var(--fs-body)/var(--lh-body) var(--font-sans); }').join(), /font weight 600/);
+  assert.match(bad('.a { font: 500 var(--fs-body)/var(--lh-body) var(--font-sans); }').join(), /font weight 500/);
   assert.match(bad('.a { font: 400 var(--fs-body)/var(--lh-micro) var(--font-sans); }').join(), /--fs-body with --lh-micro/);
   assert.match(bad('.a { line-height: 1.6; }').join(), /line-height is not a token/);
   assert.match(bad('.a { font-size: var(--fs-caption); }').join(), /unknown token --fs-caption/);
@@ -409,9 +417,9 @@ test('the scanners flag what they are meant to (not a vacuous pass)', () => {
   assert.match(bad('.screen { --fs-read: 18px; }').join(), /type token outside :root/);
   assert.match(bad('@media (min-width: 1024px) { html:root { --type-k: 1.15; --fs-body: calc(13px * var(--type-k)); } }').join(), /type multiplier|not a Charcoal size/);
   // role resolution sees the laptop override only from 1024 px
-  const d = cssTypeProblems({ 'css/tokens.css': base, 'css/desktop.css': '@media (min-width: 1024px) { html:root { --fs-read: 18px; } }' }).decls;
-  assert.equal(tokensAt(d, 1023)['--fs-read'], '13px');
-  assert.equal(tokensAt(d, 1024)['--fs-read'], '18px');
+  const d = cssTypeProblems({ 'css/tokens.css': base, 'css/desktop.css': '@media (min-width: 1024px) { html:root { --fs-title: 23px; } }' }).decls;
+  assert.equal(tokensAt(d, 1023)['--fs-title'], '17px');
+  assert.equal(tokensAt(d, 1024)['--fs-title'], '23px');
   assert.equal(mediaMatches('(min-width: 600px) and (max-width: 641px)', 640), true);
   assert.equal(mediaMatches('(min-width: 600px) and (max-width: 641px)', 700), false);
   assert.equal(mediaMatches('(prefers-reduced-motion: reduce)', 700), null);
@@ -419,9 +427,9 @@ test('the scanners flag what they are meant to (not a vacuous pass)', () => {
   const js = (src) => jsTypeProblems('js/x.js', src);
   assert.deepEqual(js('ctx.font = `700 13px ${t.sans}`; const px = parseFloat(getComputedStyle(el).fontSize);'), []);
   assert.match(js('ctx.font = `400 14px ${t.mono}`;').join(), /14 px is not a Charcoal size/);
-  assert.match(js("document.fonts.load('400 15px NG Sans');").join(), /15 px/);
+  assert.match(js("document.fonts.load('400 14px Figtree');").join(), /14 px/);
   assert.match(js("el.style.cssText = 'font-size: 16px; color: red';").join(), /inline font-size/);
-  assert.match(js("el.style.fontSize = '17px';").join(), /fontSize/);
+  assert.match(js("el.style.fontSize = '16px';").join(), /fontSize/);
   assert.match(js('const s = { fontSize: 14 };').join(), /fontSize/);
   assert.match(js("el.style.lineHeight = '1.6';").join(), /lineHeight/);
   assert.match(js('html`<text font-size="9">x</text>`').join(), /SVG font-size: .*9 is not a Charcoal size/);

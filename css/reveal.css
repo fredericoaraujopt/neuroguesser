@@ -1,7 +1,7 @@
 /* NeuroGuesser · reveal, day summary, share sheet, report sheet (W2 "reveal" track).
    Loaded with loadCss('css/reveal.css') from js/screens/{reveal,summary,share,report}.js.
    Charcoal: tokens only (css/tokens.css), radii 8 / 4 / 0 inside data areas, no shadows outside sheets,
-   every state = colour + word or glyph, numerals in Liberation Mono, transform/opacity motion only. */
+   every state = colour + word or glyph, numerals in Geist Mono, transform/opacity motion only. */
 
 /* ======================================================================================
    Reveal (handoff screen 3)
@@ -23,7 +23,7 @@
   display: inline-flex; align-items: center; gap: 4px;
   min-height: 32px; padding: 0 8px; margin-left: -8px;
   border-radius: var(--radius-md);
-  font: 700 var(--fs-card)/var(--lh-card) var(--font-sans); white-space: nowrap;
+  font: 600 var(--fs-card)/var(--lh-card) var(--font-sans); white-space: nowrap;
 }
 .reveal-verdict .t-num { font-weight: 400; }
 .reveal-verdict.is-accent { color: var(--accent); }
@@ -41,10 +41,7 @@
   pointer-events: none;
 }
 .reveal-hero-keys.is-low { bottom: 14px; }
-.reveal-legend { min-width: 0; max-width: 64%; }
-.reveal-legend > span { align-items: flex-start; }
-.reveal-legend .key-line { flex: none; margin-top: 6px; }
-.reveal-legend .key-box { flex: none; margin-top: 3px; }
+/* no legend under the hero: the layer toggles name the layers, so they are the key (App Design Guide §4) */
 .reveal-hero-keys .scalebar { flex: none; }
 .reveal-toggles { position: absolute; left: 12px; right: 12px; bottom: 10px; }
 .reveal-toggles > button {
@@ -58,6 +55,7 @@
 .reveal-toggles > button:not(:has(> .reveal-toggle-text)) { flex-shrink: 0; }
 .reveal-toggle-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .reveal-toggle-count { flex: none; white-space: nowrap; }
+.reveal-toggle-count.t-num { font-size: inherit; line-height: inherit; }
 
 /* body */
 .reveal-body {
@@ -65,9 +63,17 @@
   display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; gap: 12px;
 }
 /* v1.2 (§3.3 item 2): the neuron leads — the name (23), then the Facts tab ("Did you know?") by default */
-.reveal-name { margin: 0; font: 700 var(--fs-name)/var(--lh-name) var(--font-sans); color: var(--ink); }
+.reveal-name { margin: 0; font: 700 var(--fs-name)/var(--lh-name) var(--font-sans); letter-spacing: -0.01em; color: var(--ink); text-wrap: balance; } /* app-title: the one 700 on the screen */
 .reveal-skel-title { display: block; height: 26px; width: 62%; border-radius: var(--radius-sm); }
-.reveal-where { font-size: var(--fs-label); }
+.reveal-over { font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); color: var(--ink-muted); }
+.reveal-where { font: 400 var(--fs-label)/var(--lh-label) var(--font-sans); color: var(--slate-200); }
+.reveal-more { align-self: flex-start; }
+/* phones (App Design Guide, 12 Oct 2026): "Day 9 · It was" 15 muted → name 28 / 700 → species · region 17; layer chips
+   13. The laptop keeps its steps (css/desktop.css). */
+@media (max-width: 1023px) {
+  .reveal-where { font: 400 var(--fs-read)/var(--lh-read) var(--font-sans); }
+  .reveal-toggles > button { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); }
+}
 .reveal-prov { margin: 0; }
 .reveal-p { margin: 0; }
 /* reading text (v1.3 role, ARCHITECTURE.md 3.4 item 6: 13 / 1.45 on phones, 18 / 1.45 on a laptop): the trivia
@@ -77,7 +83,7 @@
 }
 .reveal-outcome { display: block; }
 
-/* detail tabs: Facts · Ephys · Genes · Graph · How it was made · Papers — a long label gets the room it needs and
+/* detail tabs: Facts · Ephys · Genes · Graph · Method · Papers — a long label gets the room it needs and
    the row wraps (two full rows at 375 px with 5–6 tabs) instead of truncating */
 .segmented.reveal-tabs { display: flex; flex-wrap: wrap; }
 .segmented.reveal-tabs > button { flex: 1 1 auto; padding: 0 12px; white-space: nowrap; }
@@ -258,7 +264,7 @@
 .share-row .strip { display: flex; }
 .share-row .strip-method { margin-left: auto; }
 .share-foot { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-top: 10px; border-top: 1px solid var(--hairline); }
-.share-total { font: 400 var(--fs-title)/var(--lh-title) var(--font-mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+.share-total { font: 400 var(--fs-title)/var(--lh-title) var(--font-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
 .share-text {
   margin: 0; padding: 10px 12px;
   background: var(--surface-sunken);
@@ -326,3 +332,5 @@
 .report-done { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
 .report-done .overline { display: inline-flex; align-items: center; gap: 6px; }
 .report-mark { display: inline-flex; width: 1em; height: 1em; }
+/* v0.6.1: the vibe-coded notice under the trivia (note 1ntJ…) */
+.reveal-disclaimer { margin: 0; }

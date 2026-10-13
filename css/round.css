@@ -29,6 +29,8 @@
 .round-pane { position: absolute; inset: 0; }
 .round-canvas { position: absolute; inset: 0; }
 .round-tag { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+/* phones: the round strip under the viewer already says "Round 2 of 5" (App Design Guide: no duplicates) */
+@media (max-width: 1023px) { .round-tag-n { display: none; } }
 .round-points { position: relative; white-space: nowrap; }
 .viewer-points.is-warn { color: var(--state-warn); }
 .round-delta {
@@ -49,8 +51,8 @@
   position: absolute; left: 16px; right: 16px; top: 50%;
   transform: translateY(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 2px;
-  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); color: var(--ink-muted);
-  text-transform: uppercase; text-align: center;
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted);
+  text-align: center;
   pointer-events: none;
 }
 .round-msg.is-error { color: var(--state-error); }
@@ -103,6 +105,9 @@
 /* ---------- question area ---------- */
 .round-verdict { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; min-height: 22px; }
 .round-verdict > .overline { padding-top: 2px; }
+.round-verdict-text { font: 600 var(--fs-body)/var(--lh-body) var(--font-sans); padding-top: 2px; }
+.round-verdict-text.is-accent { color: var(--accent); }
+.round-verdict-text.is-error { color: var(--state-error); }
 .round-stamp { flex: none; }
 .option-mark .fx-check { margin-right: 1px; }
 /* strikethrough across every line of a wrapped label (fx-strike's single ::after line sits between the two

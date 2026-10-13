@@ -35,7 +35,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { html, cx, loadCss } from '../ui/html.js';
 import { useStore } from '../store.js';
 import * as api from '../api.js';
-import { Button, GhostButton, Segmented, Legend, ScaleBar, OfflineChip } from '../ui/components.js';
+import { Button, GhostButton, Segmented, ScaleBar, OfflineChip } from '../ui/components.js';
 import { MeshViewer } from '../viewer/mesh-viewer.js';
 import { GraphView } from '../viewer/graph-view.js';
 import { loadReveal, ackReveal, outcomeOf, currentView } from '../game.js';
@@ -84,6 +84,32 @@ export function verdictOf(state) {
   if (outcome === 'met') return { word: 'Met', glyph: '✓', tone: 'accent', points };
   if (outcome === 'missed') return { word: 'Missed', glyph: '✕', tone: 'error', points };
   return { word: 'Revealed', glyph: '·', tone: 'muted', points };
+}
+
+/** A layer toggle's text: "✓ Volume" when on, "Volume off" when off (every state is a glyph or a word). */
+export function toggleText(label, on) {
+  return on ? `✓ ${label}` : `${label} off`;
+}
+
+const SHORT_MAX = 10;
+const shortOk = (x) => typeof x === 'string' && x.length > 0 && x.length <= SHORT_MAX && x.split(' ').length <= 2
+  && /[A-Z0-9]/.test(x);
+/**
+ * Short form of a cell type for chips ("Dm8 medulla amacrine neuron" → "Dm8", "Mushroom body output neuron (MBON)" →
+ * "MBON", "L2/3 IT pyramidal neuron" → "L2/3 IT"): the name's abbreviation in brackets, else the first synonym of at
+ * most two words and 10 characters with a capital or digit, else the name's first word when the rest is just
+ * "neuron" / "cell"; none of them → "Same type". App Design Guide §4: no repeated long names.
+ */
+export function shortTypeName(type) {
+  const t = type || {};
+  const name = typeof t.name === 'string' ? t.name : '';
+  const paren = /\(([^()]+)\)/.exec(name);
+  if (paren && shortOk(paren[1])) return paren[1];
+  for (const syn of t.synonyms || []) if (shortOk(syn)) return syn;
+  const m = /^(\S+) (?:neuron|cell)$/.exec(name);
+  if (m && shortOk(m[1])) return m[1];
+  if (shortOk(name)) return name;
+  return 'Same type';
 }
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -135,6 +161,8 @@ export const TRIVIA_PARTS = [
 /** v1.4 (feedback qshG): "In short" leads the card when the reveal carries the type's `summary` fact — one or two plain
  * sentences on what the cell does, tied to its shape (quoted and cited like every other fact). */
 export const SUMMARY_PART = { id: 'short', category: 'summary', label: 'In short' };
+/** v0.6.1 (note 1ntJ…): the notice under every trivia card. Settings → About says the same at length. */
+export const AI_NOTICE = 'Vibe coded with AI help: these facts are paraphrased from the quoted papers and checked, but they can still be wrong. Check the source before relying on one.';
 const sameLabel = (s) => String(s == null ? '' : s).trim().toLowerCase();
 
 /**
@@ -230,7 +258,7 @@ export function triviaParts(reveal, { optionLabels = [], graph = null } = {}) {
     literature,
     parts: card ? parts : [],
     extra: facts.filter((f) => !used.has(f)),
-    roleLine: card && !fn ? null : role,
+    roleLine: summary || (card && !fn) ? null : role,
     extraTitle: !card ? 'Did you know?' : literature ? 'More facts' : 'From the literature',
   };
 }
@@ -251,7 +279,7 @@ export function revealTabs(reveal, graphAsset) {
   return tabs;
 }
 export const TAB_LABELS = {
-  facts: 'Facts', ephys: 'Ephys', genes: 'Genes', graph: 'Graph', made: 'How it was made', papers: 'Papers',
+  facts: 'Facts', ephys: 'Ephys', genes: 'Genes', graph: 'Graph', made: 'Method', papers: 'Papers',
 };
 
 const MATCH_WORD = { same_type: 'type', same_subclass: 'subclass', same_class: 'class' };
@@ -522,14 +550,6 @@ function RevealHero({ round, reveal, verdict, perfect, verdictRef, perfectRef, l
   const word = labelsWord(labels);
   const volumeLabel = reveal ? `${reveal.neuron.dataset_name} volume` : 'volume';
 
-  const legend = inContext
-    ? [
-      { label: cellLabel, kind: 'line', color: 'var(--data-black)' },
-      ...(sibCount && layers.siblings ? [{ label: `${typeName}, same volume`, kind: 'line', color: 'var(--data-sky)' }] : []),
-      ...(layers.volume ? [{ label: volumeLabel, kind: 'box' }] : []),
-    ]
-    : [{ label: cellLabel, kind: 'line', color: 'var(--data-black)' }];
-
   const modes = [{ id: 'cell', label: 'Cell' }, { id: 'context', label: 'In context' }];
   return html`<div class=${cx('viewer reveal-hero', inContext && 'is-context')}>
     <div class="viewer-canvas" ref=${hostRef} role="img"
@@ -537,7 +557,7 @@ function RevealHero({ round, reveal, verdict, perfect, verdictRef, perfectRef, l
     <div class="reveal-hero-top">
       <div class="reveal-verdict-wrap">
         <span class=${cx('reveal-verdict', `is-${verdict.tone}`)} ref=${verdictRef}>
-          ${verdict.glyph} ${verdict.word} · <span class="t-num">${fmtPts(verdict.points)} pts</span>
+          ${verdict.glyph} ${verdict.word}
         </span>
         ${perfect ? html`<span class="overline is-accent reveal-perfect" ref=${perfectRef}>Perfect round</span>` : null}
         <${OfflineChip} />
@@ -559,14 +579,13 @@ function RevealHero({ round, reveal, verdict, perfect, verdictRef, perfectRef, l
     </div>
     ${failed ? html`<span class="reveal-hero-note t-micro" role="status">✕ 3D view unavailable</span>` : null}
     <div class=${cx('reveal-hero-keys', !inContext && 'is-low')}>
-      <${Legend} items=${legend} class="reveal-legend" />
       <${ScaleBar} pxPerUm=${pxPerUm} align="right" />
     </div>
     ${inContext ? html`<div class="toggle-row reveal-toggles">
-      <button type="button" aria-pressed=${layers.volume ? 'true' : 'false'} onClick=${() => toggle('volume')}>${layers.volume ? '✓ ' : ''}Volume</button>
+      <button type="button" aria-pressed=${layers.volume ? 'true' : 'false'} onClick=${() => toggle('volume')}>${toggleText('Volume', layers.volume)}</button>
       ${sibCount ? html`<button type="button" aria-pressed=${layers.siblings ? 'true' : 'false'} onClick=${() => toggle('siblings')}
-        aria-label=${`${typeName}, ${sibCount} nearby`}><span class="reveal-toggle-text">${layers.siblings ? '✓ ' : ''}${typeName}</span><span class="reveal-toggle-count">${`\u00a0· ${sibCount}`}</span></button>` : null}
-      ${word ? html`<button type="button" aria-pressed=${layers.labels ? 'true' : 'false'} onClick=${() => toggle('labels')}>${layers.labels ? '✓ ' : ''}${word}</button>` : null}
+        aria-label=${`${typeName}, ${sibCount} nearby`}><span class="reveal-toggle-text">${toggleText(shortTypeName(reveal && reveal.type), layers.siblings)}</span><span class="reveal-toggle-count t-num">${`\u00a0· ${sibCount}`}</span></button>` : null}
+      ${word ? html`<button type="button" aria-pressed=${layers.labels ? 'true' : 'false'} onClick=${() => toggle('labels')}>${toggleText(word, layers.labels)}</button>` : null}
     </div>` : null}
   </div>`;
 }
@@ -600,7 +619,7 @@ function FactBody({ fact, id }) {
       <a class="dyk-cite" href=${doiUrl(fact.doi)} target="_blank" rel="noopener noreferrer"
         aria-label=${`${fact.citation}, doi ${fact.doi}, opens the paper`}>— ${fact.citation}${NBSP}↗</a>
       ${quotes.length ? html`<button type="button" class="dyk-toggle" aria-expanded=${open ? 'true' : 'false'} aria-controls=${qid}
-        onClick=${() => { haptic('selection'); setOpen(!open); }}>${open ? `Hide quote${many ? 's' : ''} ▴` : many ? `Show ${quotes.length} quotes ▾` : 'Show quote ▾'}</button>` : null}
+        onClick=${() => { haptic('selection'); setOpen(!open); }}>${open ? `Hide quote${many ? 's' : ''}` : many ? `Show ${quotes.length} quotes` : 'Show quote'}</button>` : null}
     </div>
     ${quotes.length && open ? html`<div class="dyk-quotes" id=${qid}>
       ${quotes.map((q, i) => html`<blockquote key=${i} class="dyk-quote">
@@ -624,7 +643,7 @@ function TriviaPart({ part, idBase }) {
     ${part.text ? html`<p class="t-read dyk-text">${part.text}</p>` : null}
     ${part.data ? html`<div class="dyk-data">
       <p class="t-read dyk-data-text">${part.data}</p>
-      <span class="t-micro t-muted">From this dataset’s synapses · same-type partners hidden</span>
+      <span class="t-micro t-muted">From this dataset’s synapses</span>
     </div>` : null}
   </section>`;
 }
@@ -650,6 +669,7 @@ export function FactsPanel({ reveal, round = null, graphAsset = null, loader = d
   const nt = transmitterLine(reveal.trivia && reveal.trivia.neurotransmitter);
   const aka = (t.synonyms || []).filter((s) => s && s !== t.name && s !== t.dataset_label);
   const idBase = `dyk-${reveal.round_id}`;
+  const [more, setMore] = useState(false);
   // the facts not in a part: under the card and the transmitter line; with no card (v1.2 facts without partner data)
   // they take the card's place, as "Did you know?"
   const extra = tp.extra.length ? html`<section class="card reveal-dyk is-extra" aria-label=${tp.extraTitle}>
@@ -661,7 +681,6 @@ export function FactsPanel({ reveal, round = null, graphAsset = null, loader = d
     ${tp.card ? html`<section class="card reveal-dyk" aria-label="Did you know?">
       <div class="row-between">
         <h2 class="card-title dyk-title">Did you know?</h2>
-        ${tp.literature ? html`<span class="t-micro t-muted">from the literature</span>` : null}
       </div>
       ${tp.parts.map((p) => html`<${TriviaPart} key=${p.id} part=${p} idBase=${idBase} />`)}
     </section>` : extra || html`<p class="t-label t-muted reveal-soon">More about this cell soon.</p>`}
@@ -669,7 +688,10 @@ export function FactsPanel({ reveal, round = null, graphAsset = null, loader = d
       ${nt ? html`<span class="k">Transmitter</span><span class="v reveal-v-text">${nt.replace(/^Transmitter: /, '')}</span>` : null}
       ${aka.length ? html`<span class="k">Also called</span><span class="v reveal-v-text">${aka.join(', ')}</span>` : null}
     </div>` : null}
-    ${tp.card ? extra : null}
+    ${tp.card && extra ? html`<button type="button" class="btn-text reveal-more" aria-expanded=${more ? 'true' : 'false'}
+      onClick=${() => { haptic('selection'); setMore(!more); }}>${more ? 'Fewer facts' : html`More facts · <span class="t-num">${tp.extra.length}</span>`}</button>` : null}
+    ${tp.card && more ? extra : null}
+    ${tp.literature || tp.extra.length ? html`<p class="t-body t-muted reveal-disclaimer">${AI_NOTICE}</p>` : null}
   </div>`;
 }
 
@@ -922,15 +944,15 @@ export function RevealView({
   const t = reveal ? reveal.type : null;
 
   return html`<div class="screen reveal">
-    <${RevealHero} round=${round} reveal=${reveal} verdict=${verdict} perfect=${perfect} verdictRef=${verdictRef}
+    <${RevealHero} round=${round} reveal=${reveal} verdict=${verdict} perfect=${perfect && fresh} verdictRef=${verdictRef}
       perfectRef=${perfectRef} loader=${loader} onFullView=${onFullView} dayNumber=${dayNumber} n=${n} retryKey=${retryKey}
       cellLabel=${cellLabel} />
     <div class="reveal-body">
-      ${day && day.rounds && day.rounds.length ? html`<${DayProgress} today=${day} class="in-reveal" />` : null}
+      ${day && day.rounds && day.rounds.length ? html`<${DayProgress} today=${day} round=${n} class="in-reveal" />` : null}
       <div class="stack-4 reveal-head">
-        <span class="overline">${overline || `#${dayNumber} · Round ${n} · It was`}</span>
+        <span class="reveal-over">${overline || (dayNumber ? `Day ${dayNumber} · It was` : 'It was')}</span>
         ${t ? html`<h1 class="reveal-name">${t.name}</h1>
-          <span class="t-label t-soft reveal-where"><i>${t.species}</i>${t.region ? ` · ${t.region}` : ''}</span>`
+          <span class="reveal-where"><i>${t.species}</i>${t.region ? ` · ${t.region}` : ''}</span>`
           : error ? null : html`<span class="skeleton reveal-skel-title" aria-hidden="true"></span>
             <span class="t-micro t-muted" role="status">Loading the reveal…</span>`}
       </div>
@@ -944,7 +966,6 @@ export function RevealView({
       </div>` : null}
 
       ${reveal ? html`<${DetailTabs} key=${reveal.round_id} reveal=${reveal} round=${round} state=${state} graphAsset=${graphAsset} loader=${loader} onFullView=${onFullView} />` : null}
-      <span class="t-label t-muted reveal-outcome">${outcomeLine(state)}</span>
 
       <div class="grid-2 reveal-actions">
         <${Button} onClick=${onNext}>${nextLabel}</${Button}>

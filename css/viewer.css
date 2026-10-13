@@ -20,18 +20,17 @@
 .mv-label {
   position: absolute; left: 0; top: 0;
   padding: 3px 0 0 6px;               /* sits just inside its band, right of the plane corner */
-  /* one-line label: line height 1.25 keeps the box at 14 px with the 11 px micro step (15 with 12 on a laptop), so
-     close layer planes (L1 / L2/3 on a phone) still both fit the collision pass instead of one hiding */
+  /* App Design Guide §4 (12 Oct 2026): 13 px (the caption step; 12 on a laptop), ink, no outline, glow or shadow
+     behind the text; labels that would collide are hidden instead (mesh-viewer layoutLabels). One-line box: the
+     card line height keeps close layer planes (L1 / L2/3 on a phone) apart in the collision pass. */
   font: 400 var(--fs-micro)/var(--lh-card) var(--font-sans); color: var(--ink);
   white-space: nowrap;
   will-change: transform;
-  /* sunken keyline under the glyphs (stroke painted first): a label stays legible where it crosses today's
-     white cell or a bright part of the volume; invisible on the plain sunken ground */
-  paint-order: stroke fill; -webkit-text-stroke: 2px var(--surface-sunken);
 }
-.mv-label.is-point { padding: 0; margin: -7px 0 0 -2px; color: var(--slate-300); display: flex; align-items: center; gap: 4px; }
-.mv-label.is-point::before { content: ""; width: 3px; height: 3px; background: var(--slate-300); }
-/* collision pass (mesh-viewer layoutLabels): a point label that would overlap a nearer one sits left of its dot */
+.mv-label.is-point { padding: 0; margin: -8px 0 0 0; display: flex; align-items: center; gap: 4px; }
+/* a short leader line (1 px, 55 % ink) from the region's anchor to its label */
+.mv-label.is-point::before { content: ""; flex: none; width: 6px; height: 1px; background: var(--ink); opacity: 0.55; }
+/* collision pass (mesh-viewer layoutLabels): a point label that would overlap a nearer one sits left of its anchor */
 .mv-label.is-point.is-left { flex-direction: row-reverse; }
 /* today's cell in context, when it is too small to see: the soma as a 7 px data-black dot */
 .mv-soma {
@@ -42,7 +41,7 @@
 .mv-status {
   position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-50%);
   text-align: center; pointer-events: none;
-  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); text-transform: uppercase; color: var(--ink-muted);
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted);
 }
 .mv-status.is-loading { animation: mv-breathe 1.2s ease-in-out infinite alternate; }
 @keyframes mv-breathe { from { opacity: 0.45; } to { opacity: 1; } }
@@ -74,7 +73,7 @@
 .fv-status {
   position: absolute; left: 24px; right: 24px; top: 50%; transform: translateY(-50%);
   text-align: center; pointer-events: none;
-  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); text-transform: uppercase; color: var(--state-warn);
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--state-warn);
 }
 .fv-chrome { transition: opacity var(--dur-fast) linear; }
 .fv-chrome.is-hidden { opacity: 0; pointer-events: none; }

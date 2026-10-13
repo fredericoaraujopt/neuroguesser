@@ -19,10 +19,10 @@ import { saveDataNow } from './factory.js';
 export { prefetchEm, saveDataNow } from './factory.js';
 
 export const TABS = Object.freeze([
-  { id: 'xy', label: 'XY', word: 'Sections', aria: 'XY sections' },
+  { id: 'xy', label: 'XY', word: '', aria: 'XY sections' },
   { id: 'xz', label: 'XZ', word: 'Side', aria: 'XZ side view' },
   { id: 'yz', label: 'YZ', word: 'Side', aria: 'YZ side view' },
-  { id: '3d', label: '3D', word: 'Mesh', aria: 'EM planes in the 3D mesh' },
+  { id: '3d', label: '3D', word: '', aria: 'EM planes in the 3D mesh' },
 ]);
 const PANEL_NAMES = { xy: 'XY', xz: 'XZ', yz: 'YZ', '3d': '3D' };
 const NORMAL = { xy: 'z', xz: 'y', yz: 'x' };
@@ -210,7 +210,7 @@ function Tabs({ panel, s, onPanel }) {
     ${TABS.map((t) => {
       const active = panel === t.id;
       const unavailable = (t.id === 'xz' || t.id === 'yz') && s.orthoFailed;
-      const word = unavailable ? 'unavailable' : active ? 'Viewing' : t.word;
+      const word = unavailable ? 'unavailable' : t.word;   // v0.6.1: no "Viewing" (the underline says it)
       return html`<button key=${t.id} type="button" role="tab" class=${cx('clue-tab', active && 'is-active')} aria-selected=${active ? 'true' : 'false'}
         aria-label=${`${t.aria}${active ? ', viewing' : ''}${unavailable ? ', unavailable' : ''}`} onClick=${() => onPanel(t.id)}>
         <b>${t.label}</b><span class=${active ? 'is-accent' : ''}>${word}</span>

@@ -447,7 +447,25 @@ function FeedbackButton() {
   </button>`;
 }
 
+/** Whether the window is a laptop's (≥ 1024 px: the web layout with the top header). */
+const WIDE_QUERY = '(min-width: 1024px)';
+function useWide() {
+  const mq = () => { try { return typeof matchMedia === 'function' ? matchMedia(WIDE_QUERY) : null; } catch (_) { return null; } };
+  const [wide, setWide] = useState(() => { const m = mq(); return !!(m && m.matches); });
+  useEffect(() => {
+    const m = mq();
+    if (!m) return undefined;
+    const on = () => setWide(m.matches);
+    if (m.addEventListener) m.addEventListener('change', on); else if (m.addListener) m.addListener(on);
+    return () => { if (m.removeEventListener) m.removeEventListener('change', on); else if (m.removeListener) m.removeListener(on); };
+  }, []);
+  return wide;
+}
+
 /**
+ * App Design Guide (12 Oct 2026): on phones and tablets (< 1024 px) the Feedback button is no longer a persistent strip
+ * above the tab bar; it lives in the tab bar's ⋯ menu (ui/components.js MoreMenu). On a laptop it stays in the header.
+ *
  * app.js: the button in its strip above the tab bar (.fb-dock: reserved space, so it never covers the screen) + the
  * "addressed" notice. hidden = no tab bar (full view, review, full-screen sheets): no strip. While a bottom sheet is
  * open the strip stays (nothing behind the scrim reflows) but the button is gone.
@@ -456,6 +474,7 @@ export function FeedbackLayer({ hidden = false }) {
   const show = useStore((s) => s.session.settings.feedbackButton !== false);
   const notice = useStore((s) => (s.feedback ? s.feedback.notice : null));
   const sheetOpen = useStore((s) => !!s.ui.sheet);
+  const wide = useWide();
   useEffect(() => { initFeedback(); }, []);
   const shown = notice && !hidden && !sheetOpen ? notice : null;
   useEffect(() => {
@@ -466,7 +485,7 @@ export function FeedbackLayer({ hidden = false }) {
   }, [shown && shown.id]);
   if (!FEEDBACK_ENABLED) return null;
   return html`
-    ${show && !hidden ? html`<div class="fb-dock">${sheetOpen ? null : html`<${FeedbackButton} />`}</div>` : null}
+    ${show && !hidden && wide ? html`<div class="fb-dock">${sheetOpen ? null : html`<${FeedbackButton} />`}</div>` : null}
     <div class="toast-host fb-notice-host" aria-live="polite">
       ${shown ? html`<button type="button" key=${shown.id} class="toast is-accent fb-notice"
         onClick=${() => { haptic('selection'); openFeedbackList(); }}>

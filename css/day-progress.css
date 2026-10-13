@@ -51,10 +51,19 @@
 
 .dp-total {
   flex: none;
-  font: 400 var(--fs-body)/var(--lh-body) var(--font-mono); font-variant-numeric: tabular-nums; color: var(--accent);
+  font: 400 var(--fs-body)/var(--lh-body) var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); /* a score: ink, not accent */
   white-space: nowrap; text-align: right;
 }
 .dp-total small { font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted); }
+
+/* round strip with a head (round / reveal): "Round 2 of 5" (15) and the day's score (mono 17, ink) over the segments
+   (labels 13). Inline bars only; on a laptop the header carries the bar and these step aside. */
+.day-progress.has-head { flex-direction: column; align-items: stretch; gap: 8px; }
+.day-progress.has-head .dp-segs { flex: none; }
+.dp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.dp-round { font: 400 var(--fs-body)/var(--lh-body) var(--font-sans); color: var(--slate-300); }
+.day-progress.has-head .dp-total { font: 400 var(--fs-title)/var(--lh-title) var(--font-mono); }
+.day-progress.has-head .dp-seg { height: 22px; }
 
 /* placements (inline bars) */
 .day-progress.in-round { padding: 14px 16px 0; }

@@ -24,9 +24,14 @@
 
 /* ================================================================ >= 1024 px: web layout */
 @media (min-width: 1024px) {
-  /* laptop type steps (ARCHITECTURE.md 3.4 item 6): micro 12 / 1.5, reading text 18, screen title 23; the graph
-     clue's text reads at 13 (Charcoal's diagram label) in the viewer pane; every other role keeps its phone step */
-  html:root { --fs-micro: 12px; --lh-micro: 1.5; --fs-read: 18px; --fs-title: 23px; --fs-graph: 13px; }
+  /* laptop type steps (ARCHITECTURE.md 3.4 item 6, unchanged since v0.6.1): micro / label 12, body / card 13, reading
+     text 18, screen title and the cell's name 23; the graph clue's text reads at 13 (Charcoal's diagram label) in the
+     viewer pane. The phones' App Design Guide scale (tokens.css, v0.7.0) stops here. */
+  html:root {
+    --fs-micro: 12px; --lh-micro: 1.5; --fs-label: 12px; --lh-label: 1.5; --fs-body: 13px; --lh-body: 1.3;
+    --fs-card: 13px; --lh-card: 1.25; --fs-read: 18px; --lh-read: 1.45; --fs-title: 23px; --lh-title: 1.25;
+    --fs-name: 23px; --lh-name: 1.25; --fs-graph: 13px; --h-btn: 48px; --h-btn-sm: 44px; --h-chip: 44px;
+  }
   :root .app-root {
     max-width: none;
     border-left: 0; border-right: 0;
@@ -51,7 +56,7 @@
   .topbar-mark {
     justify-self: start;
     display: inline-flex; align-items: center; min-height: 44px;
-    font: 700 var(--fs-card)/var(--lh-card) var(--font-sans); color: var(--ink);
+    font: 600 var(--fs-card)/var(--lh-card) var(--font-sans); color: var(--ink);
     white-space: nowrap;
   }
   .topbar-mark:hover { text-decoration: none; }
@@ -69,7 +74,7 @@
     white-space: nowrap;
   }
   .topbar-link:hover { color: var(--ink); text-decoration: none; }
-  .topbar-link.is-active { color: var(--ink); font-weight: 700; }
+  .topbar-link.is-active { color: var(--ink); font-weight: 600; }
   .topbar-link.is-active::after {
     content: ""; position: absolute; left: 14px; right: 14px; bottom: 0; height: 2px;
     background: var(--accent);

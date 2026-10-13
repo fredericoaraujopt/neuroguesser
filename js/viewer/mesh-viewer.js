@@ -134,11 +134,11 @@ export function shellLayerOpacity(fill) {
   return 1 - Math.sqrt(1 - f);
 }
 
-// Point labels: the element's box starts 2 px left of and 7 px above its anchor (css/viewer.css .mv-label.is-point:
-// margin -7px 0 0 -2px), the 3 px dot first; 'left' mirrors it (dot last, text to the left of the anchor).
+// Point labels: the element's box starts at its anchor and 8 px above it (css/viewer.css .mv-label.is-point:
+// margin -8px 0 0 0), the 6 px leader line first; 'left' mirrors it (line last, text to the left of the anchor).
 // Plane labels: the box starts at the anchor with padding 3px 0 0 6px; only the text counts.
-const POINT_DX = -2;
-const POINT_DY = -7;
+const POINT_DX = 0;
+const POINT_DY = -8;
 const PLANE_PAD_X = 6;
 const PLANE_PAD_Y = 3;
 
@@ -160,14 +160,21 @@ const overlapArea = (a, b) => Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], 
  * own spot. A side must clear every kept rect and the hard `obstacles` (the soma marker) by `gap` px; among the
  * sides that do, one inside [0, width] wins, then the one covering less of the `soft` rects (today's cell on
  * screen). Returns per item 'right' | 'left' | null (hidden). O(n²) on ≤ 52 labels: well under 0.1 ms a frame.
+ * Items with the same `text` (a region named in both hemispheres: "ME", "LA", "AL") are labelled once: only the
+ * first in priority order (the one nearest today's cell) is tried; the others stay hidden (App Design Guide §4).
  */
 export function layoutLabels(items, { obstacles = [], soft = [], gap = LABEL_GAP_PX, width = Infinity } = {}) {
   const order = items.map((_, i) => i).sort((a, b) => (items[a].priority - items[b].priority) || a - b);
   const kept = obstacles.slice();
   const hits = (r, g) => kept.some((p) => r[0] < p[2] + g && r[2] + g > p[0] && r[1] < p[3] + g && r[3] + g > p[1]);
   const out = new Array(items.length).fill(null);
+  const named = new Set();
   for (const i of order) {
     const it = items[i];
+    if (it.text) {
+      if (named.has(it.text)) continue;
+      named.add(it.text);
+    }
     const sides = it.kind === 'plane' ? ['right'] : it.prev === 'left' ? ['left', 'right'] : ['right', 'left'];
     let pick = null;
     for (const s of sides) {
@@ -968,7 +975,7 @@ export class MeshViewer {
     const cell = soma || { x: w / 2, y: h / 2 };
     const items = live.map((l) => {
       // +1 px: offsetWidth rounds, so the drawn box can be up to 0.5 px wider than measured
-      const it = { kind: l.kind, x: l.x, y: l.y, w: l.w + 1, h: l.h, prev: l.side };
+      const it = { kind: l.kind, text: l.kind === 'point' ? l.text : '', x: l.x, y: l.y, w: l.w + 1, h: l.h, prev: l.side };
       it.priority = labelPriority(it, cell);
       return it;
     });

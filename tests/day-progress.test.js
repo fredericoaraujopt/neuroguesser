@@ -121,9 +121,12 @@ test('DayProgress with playing: the round screen shows its round as current whil
   await flush();
   render(h(dp.DayProgress, { today: day([named, met, null, null, null]), playing: 2 }), root);
   await flush();
-  let segs = root.firstChild.firstChild.childNodes;
+  // v0.7.0 round strip: a head "Round 2 of 5 · 1,200 pts" over the segments when the bar names its round
+  const head = root.firstChild.firstChild;
+  assert.equal(head.getAttribute('class'), 'dp-head');
+  assert.equal(head.textContent, 'Round 2 of 51,200 pts');
+  let segs = root.firstChild.childNodes[1].childNodes;
   assert.equal(segs[1].getAttribute('class'), 'dp-seg is-current');
-  assert.match(root.firstChild.textContent, /1,200 pts$/);
   // the reveal then mounts its own bar: round 2 fills there
   render(h(dp.DayProgress, { today: day([named, met, null, null, null]), class: 'in-reveal', key: 'reveal' }), root);
   await flush();
@@ -132,7 +135,7 @@ test('DayProgress with playing: the round screen shows its round as current whil
   // "Next round →": round 3's screen shows round 2 filled, without replaying the fill
   render(h(dp.DayProgress, { today: day([named, met, null, null, null]), playing: 3, key: 'round3' }), root);
   await flush();
-  segs = root.firstChild.firstChild.childNodes;
+  segs = root.firstChild.childNodes[1].childNodes;
   assert.deepEqual(segs.map((x) => x.getAttribute('class')), ['dp-seg is-named', 'dp-seg is-met', 'dp-seg is-current', 'dp-seg is-upcoming', 'dp-seg is-upcoming']);
   render(null, root);
 });

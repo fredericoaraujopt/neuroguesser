@@ -122,10 +122,10 @@ export function SummaryView({ dayNumber, date = null, total, progress, rounds, n
   const counts = outcomeCounts(progress);
   return html`<div class="screen summary-screen"><div class="screen-pad summary">
     <div class="stack-4">
-      <div class="row-between"><span class="overline">NeuroGuesser #${dayNumber} · Today</span><${OfflineChip} /></div>
+      <div class="row-between"><span class="overline">Day ${dayNumber} · Today</span><${OfflineChip} /></div>
       <div class="summary-score-row">
         <span class="summary-score" aria-label=${`${fmtPts(total)} of ${fmtPts(MAX_DAY)} points`}>
-          <span class="t-accent">${fmtPts(shown)}</span><span class="t-muted"> / ${fmtPts(MAX_DAY)}</span>
+          <span>${fmtPts(shown)}</span><span class="t-muted"> / ${fmtPts(MAX_DAY)}</span>
         </span>
         ${personalBest && chipVisible ? html`<span class="chip-mono summary-pb" ref=${chipRef}>↑ Personal best</span>` : null}
       </div>

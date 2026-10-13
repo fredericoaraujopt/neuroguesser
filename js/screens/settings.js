@@ -481,8 +481,22 @@ function DataUse({ settings }) {
   </div>`;
 }
 
+/** The citation line (note 1ntJ…): the app's own address once it is deployed (https), nothing on a dev server. */
+export function citeLine(origin = typeof location !== 'undefined' ? location.origin : '') {
+  const url = /^https:\/\//.test(origin || '') ? ` ${origin}/` : '';
+  return `Araujo, F. (2026). NeuroGuesser: a daily neuron identification game.${url}`;
+}
+
 function About() {
-  return html`<div class="card st-card">
+  return html`<div class="card st-card st-made">
+    <span class="card-title">Made by Frederico Araujo</span>
+    <span class="t-read">NeuroGuesser was vibe coded: built with an AI coding assistant. Its trivia is paraphrased by AI
+      from quoted papers and checked automatically and by AI reviewers, but it can still contain mistakes. Check the
+      cited source before relying on any fact, and use Report a problem on a reveal when something looks wrong.</span>
+    <span class="overline">How to cite</span>
+    <span class="t-body">${citeLine()}</span>
+  </div>
+  <div class="card st-card">
     <span class="t-body t-soft">Five real neurons a day from public connectomes: name each cell from its 3D shape, then
       guess how its electron microscopy was imaged.</span>
     <${Button} variant="outline" block onClick=${() => openOnboarding({ replay: true })}>How to play</${Button}>

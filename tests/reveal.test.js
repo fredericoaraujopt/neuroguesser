@@ -158,13 +158,13 @@ test('roleLine: capitalised only when it starts with a plain lower-case word', (
   assert.equal(rv.roleLine(undefined), null);
 });
 
-test('revealTabs: Facts first and always there; How it was made holds typing + imaging; empty tabs hidden', () => {
+test('revealTabs: Facts first and always there; Method (was "How it was made") holds typing + imaging; empty tabs hidden', () => {
   assert.deepEqual(rv.revealTabs(fixture.reveal, '/v1/asset/x.json'), ['facts', 'ephys', 'genes', 'graph', 'made', 'papers']);
   const bare = JSON.parse(JSON.stringify(fixture.reveal));
   delete bare.trivia.ephys; delete bare.trivia.same_cell_function; delete bare.trivia.genes; delete bare.trivia.facts;
   assert.deepEqual(rv.revealTabs(bare, null), ['facts', 'made', 'papers']);
   assert.deepEqual(rv.revealTabs(null, null), []);
-  assert.equal(rv.TAB_LABELS.made, 'How it was made');
+  assert.equal(rv.TAB_LABELS.made, 'Method'); // App Design Guide: labels of 1-3 words
   assert.deepEqual(Object.keys(rv.TAB_LABELS), ['facts', 'ephys', 'genes', 'graph', 'made', 'papers']);
 });
 
@@ -182,12 +182,21 @@ test('Facts tab: role → "Did you know?" in three labelled parts (citation → 
   const root = createContainer();
   render(h(rv.FactsPanel, { reveal: fixture.reveal, round: fixture.round, graphAsset: fixture.state.clues.graph.asset, loader }), root);
   await flush();
+  // App Design Guide: at most three facts on screen; the facts not in a part wait behind "More facts · N"
+  assert.ok(!root.textContent.includes(factOf('other').text), 'the extra fact is behind a tap');
+  const more = byClass(root, 'reveal-more');
+  assert.equal(more.length, 1);
+  assert.equal(more[0].textContent, 'More facts · 1');
+  assert.equal(more[0].getAttribute('aria-expanded'), 'false');
+  more[0].dispatch('click');
+  await flush();
+  assert.equal(byClass(root, 'reveal-more')[0].textContent, 'Fewer facts');
   const text = root.textContent;
   assert.ok(text.startsWith(ROLE), 'the role line leads');
   const order = ['Did you know?', 'What it does', factOf('function').text, 'How to tell it apart',
     'vs L5 NP pyramidal neuron, L5 IT pyramidal neuron', factOf('identify').text, 'Who it talks to', factOf('connectivity').text,
     'Here, 38% of its input synapses come from L2/3 IT and 25% from L5 IT; 29% of its output synapses go to L6 IT and 20% to Basket.',
-    'From this dataset’s synapses · same-type partners hidden', 'Transmitter', 'More facts', factOf('other').text];
+    'From this dataset’s synapses', 'Transmitter', 'Fewer facts', 'More facts', factOf('other').text];
   let at = -1;
   for (const s of order) {
     const i = text.indexOf(s, at + 1);
@@ -208,7 +217,7 @@ test('Facts tab: role → "Did you know?" in three labelled parts (citation → 
   // quotes are hidden until asked for; the look-alike tip has two (its own + the support quote)
   assert.equal(byClass(root, 'dyk-quote').length, 0);
   const toggles = byClass(root, 'dyk-toggle');
-  assert.deepEqual(toggles.map((b) => b.textContent), ['Show quote ▾', 'Show 2 quotes ▾', 'Show quote ▾', 'Show quote ▾']);
+  assert.deepEqual(toggles.map((b) => b.textContent), ['Show quote', 'Show 2 quotes', 'Show quote', 'Show quote']);
   assert.equal(toggles[1].getAttribute('aria-expanded'), 'false');
   toggles[1].dispatch('click');
   await flush();
@@ -221,7 +230,7 @@ test('Facts tab: role → "Did you know?" in three labelled parts (citation → 
   assert.equal(supportCite[0].getAttribute('href'), `https://doi.org/${factOf('identify').support[0].doi}`);
   assert.equal(byClass(root, 'dyk-quotes')[0].getAttribute('id'), byClass(root, 'dyk-toggle')[1].getAttribute('aria-controls'));
   assert.equal(byClass(root, 'dyk-toggle')[1].getAttribute('aria-expanded'), 'true');
-  assert.equal(byClass(root, 'dyk-toggle')[1].textContent, 'Hide quotes ▴');
+  assert.equal(byClass(root, 'dyk-toggle')[1].textContent, 'Hide quotes');
   // typing and acquisition live in "How it was made", not here
   assert.ok(!/What to notice|How this cell was typed|Voxel|Segmentation/.test(root.textContent));
   render(null, root);
@@ -242,6 +251,9 @@ test('Facts tab fallbacks: v1.2 facts keep the old look without partner data; no
   await flush();
   assert.deepEqual(findAll(root, (n) => n.localName === 'h3').map((n) => n.textContent), ['What it does', 'Who it talks to']);
   assert.ok(root.textContent.startsWith('Did you know?What it does'), 'the role is not repeated above the card, which does not claim "from the literature"');
+  assert.ok(!root.textContent.includes('From the literature'), 'the literature facts wait behind "More facts · 3"');
+  byClass(root, 'reveal-more')[0].dispatch('click');
+  await flush();
   assert.ok(root.textContent.includes('From the literature'));
   const none = clone(fixture.reveal);
   delete none.trivia.facts;
@@ -350,4 +362,17 @@ test('report: note cleaned for the Worker; error copy', () => {
   assert.deepEqual(rp.REPORT_REASONS.map((r) => r.id), ['wrong_label', 'bad_mesh', 'em_problem', 'fact_wrong', 'other']);
   assert.match(rp.reportErrorText(new ApiError(0, 'network', 'x')), /connection/);
   assert.match(rp.reportErrorText(new ApiError(403, 'not_done', 'x')), /Finish this round/);
+});
+
+test('shortTypeName: chips use a short form of the type (App Design Guide §4); toggleText says ✓ or "off"', () => {
+  const st = (name, synonyms = []) => rv.shortTypeName({ name, synonyms });
+  assert.equal(st('Dm8 medulla amacrine neuron', ['Dm8', 'distal medullary amacrine neuron Dm8']), 'Dm8');
+  assert.equal(st('Mushroom body output neuron (MBON)', ['MBON', 'mushroom body output neuron']), 'MBON');
+  assert.equal(st('L2/3 IT pyramidal neuron', ['L2/3 IT', 'layer 2/3 pyramidal neuron', '23P']), 'L2/3 IT');
+  assert.equal(st('E-PG (compass) neuron', ['EPG', 'E-PG', 'compass neuron']), 'EPG');
+  assert.equal(st('T5 neuron', []), 'T5');
+  assert.equal(st('Interneuron (non-spiny)', ['cortical interneuron', 'non-spiny neuron']), 'Same type');
+  assert.equal(rv.shortTypeName(null), 'Same type');
+  assert.equal(rv.toggleText('Volume', true), '✓ Volume');
+  assert.equal(rv.toggleText('Regions', false), 'Regions off');
 });

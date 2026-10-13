@@ -1,7 +1,8 @@
-// Web fonts (W3 perf follow-up): the app loads WOFF2 subsets of Liberation (fonts/build-subsets.py), not the 320-416 KB
-// TTFs. Checks the @font-face rules, the preloads and the service-worker precache agree; that each subset is small,
-// covers Latin-1, Latin Extended-A and Greek, and keeps every glyph the app's own copy uses that Liberation has; and
-// that the subsets do not carry the OFL Reserved Font Name.
+// Web fonts. Since v0.7.0 (App Design Guide, 12 Oct 2026) the app loads WOFF2 subsets of Figtree (UI text) and Geist
+// Mono (numerals) built by fonts/build-app-fonts.py from the google/fonts variable TTFs (before: Liberation subsets,
+// fonts/build-subsets.py, no longer loaded). Checks the @font-face rules, the preloads and the service-worker precache
+// agree; that each subset is small, covers Latin-1 and Latin Extended-A, and keeps every glyph the app's own copy uses
+// that its source font has; and that the copyright and licence records are kept.
 import './_importmap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -18,7 +19,7 @@ const sw = read('sw.js');
 const faces = [...tokens.matchAll(/@font-face\s*\{([^}]*)\}/g)].map(([, body]) => ({
   family: /font-family:\s*"([^"]+)"/.exec(body)[1],
   src: /src:\s*url\("\.\.\/(fonts\/[^"]+)"\)\s*format\("([^"]+)"\)/.exec(body).slice(1),
-  weight: /font-weight:\s*(\d+)/.exec(body)[1],
+  weight: /font-weight:\s*(\d+(?: \d+)?)/.exec(body)[1],
   style: /font-style:\s*(\w+)/.exec(body)[1],
   display: (/font-display:\s*(\w+)/.exec(body) || [])[1],
 }));
@@ -116,9 +117,9 @@ function woff2Tables(file) {
 
 // ----------------------------------------------------------------------------------------------------- the CSS
 
-test('@font-face: WOFF2 subsets only (no TTF), swap, Sans 400/700/italic + Mono 400, files on disk', () => {
+test('@font-face: WOFF2 subsets only (no TTF), swap, Figtree 400-700 + italic 400, Geist Mono 400-500, files on disk', () => {
   assert.deepEqual(faces.map((f) => `${f.family} ${f.weight} ${f.style}`).sort(),
-    ['NG Mono 400 normal', 'NG Sans 400 italic', 'NG Sans 400 normal', 'NG Sans 700 normal']);
+    ['Figtree 400 700 normal', 'Figtree 400 italic', 'Geist Mono 400 500 normal']);
   for (const f of faces) {
     assert.equal(f.src[1], 'woff2', f.src[0]);
     assert.match(f.src[0], /\.woff2$/);
@@ -126,11 +127,11 @@ test('@font-face: WOFF2 subsets only (no TTF), swap, Sans 400/700/italic + Mono 
     assert.equal(f.display, 'swap');
   }
   assert.doesNotMatch(tokens, /\.ttf/, 'tokens.css loads no TTF');
-  assert.match(tokens, /--font-sans:\s*"NG Sans",/);
-  assert.match(tokens, /--font-mono:\s*"NG Mono",/);
+  assert.match(tokens, /--font-sans:\s*Figtree,/);
+  assert.match(tokens, /--font-mono:\s*"Geist Mono",/);
 });
 
-test('preloads: the faces of the first paint (Sans 400/700, Mono 400) as font/woff2 with crossorigin, nothing else', () => {
+test('preloads: the faces of the first paint (Figtree, Geist Mono) as font/woff2 with crossorigin, nothing else', () => {
   const hrefs = preloads.map((t) => /href="([^"]+)"/.exec(t)[1]);
   const want = faces.filter((f) => f.style === 'normal').map((f) => f.src[0]);
   assert.deepEqual(hrefs.sort(), want.sort(), 'each preload is a declared face (else it downloads twice)');
@@ -143,7 +144,7 @@ test('preloads: the faces of the first paint (Sans 400/700, Mono 400) as font/wo
 test('service worker precaches every face and no TTF', () => {
   for (const f of faces) assert.ok(shell.includes(f.src[0]), `precache ${f.src[0]}`);
   assert.deepEqual(shell.filter((p) => p.endsWith('.ttf')), []);
-  assert.ok(existsSync(path.join(appRoot, 'fonts/OFL.txt')));
+  for (const f of ['fonts/OFL-Figtree.txt', 'fonts/OFL-GeistMono.txt']) assert.ok(existsSync(path.join(appRoot, f)), f);
 });
 
 test('no script names the old family: canvas text and document.fonts.load go through --font-sans / --font-mono', () => {
@@ -159,10 +160,10 @@ test('no script names the old family: canvas text and document.fonts.load go thr
 
 // --------------------------------------------------------------------------------------------------- the files
 
-const SOURCE = { 'NGSans-Regular': 'LiberationSans-Regular', 'NGSans-Bold': 'LiberationSans-Bold', 'NGSans-Italic': 'LiberationSans-Italic', 'NGMono-Regular': 'LiberationMono-Regular' };
+const SOURCE = { 'Figtree-Var': 'Figtree[wght]', 'Figtree-Italic': 'Figtree-Italic[wght]', 'GeistMono-Var': 'GeistMono[wght]' };
 const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
-// Code points Liberation 2.1.5 has in these blocks: printable ASCII, Latin-1, Latin Extended-A, basic Greek letters.
-const REQUIRED = [...range(0x20, 0x7e), ...range(0xa0, 0x17f), ...range(0x391, 0x3a1), ...range(0x3a3, 0x3a9), ...range(0x3b1, 0x3c9)];
+// Printable ASCII, Latin-1 and Latin Extended-A (Figtree has no Greek: Greek letters fall back to the next face).
+const REQUIRED = [...range(0x20, 0x7e), ...range(0xa0, 0x17f)];
 // Non-ASCII characters in js/ and css/ that are not text on screen (regex bounds in js/ui/html.js).
 const NOT_COPY = new Set(['ἀ', '῿']);
 
@@ -180,7 +181,7 @@ function usedChars() {
 }
 
 for (const [out, src] of Object.entries(SOURCE)) {
-  test(`${out}.woff2: small, covers Latin/Greek and every app glyph Liberation has, renamed (OFL RFN)`, () => {
+  test(`${out}.woff2: small, covers Latin and every app glyph its source has, licence records kept`, () => {
     const file = readFileSync(path.join(appRoot, `fonts/${out}.woff2`));
     const ttf = readFileSync(path.join(appRoot, `fonts/${src}.ttf`));
     assert.ok(file.length < 32 * 1024, `${out}.woff2 is ${file.length} B (≤ 32 KB; the TTF is ${ttf.length} B)`);
@@ -188,18 +189,16 @@ for (const [out, src] of Object.entries(SOURCE)) {
     const cps = cmapCodepoints(t.get('cmap').buf, t.get('cmap').off);
     const srcTables = ttfTables(ttf);
     const srcCps = cmapCodepoints(ttf, srcTables.get('cmap').off);
-    const missing = REQUIRED.filter((c) => !cps.has(c)).map((c) => `U+${c.toString(16).toUpperCase()}`);
-    assert.deepEqual(missing, [], 'Latin-1 / Latin Extended-A / Greek');
+    const missing = REQUIRED.filter((c) => !cps.has(c) && srcCps.has(c)).map((c) => `U+${c.toString(16).toUpperCase()}`);
+    assert.deepEqual(missing, [], 'Latin-1 / Latin Extended-A');
     const lost = [...usedChars()].filter((ch) => srcCps.has(ch.codePointAt(0)) && !cps.has(ch.codePointAt(0)));
     assert.deepEqual(lost, [], 'glyphs the app uses that the TTF had but the subset dropped');
     for (const c of cps) assert.ok(srcCps.has(c), `U+${c.toString(16)} not in the source font`);
     const n = names(t.get('name').buf, t.get('name').off);
-    for (const id of [1, 4, 6]) assert.doesNotMatch(n.get(id), /Liberation|Arimo|Cousine/, `name ${id}: ${n.get(id)}`);
-    assert.match(n.get(1), out.startsWith('NGMono') ? /^NG Mono$/ : /^NG Sans$/);
-    assert.match(n.get(4), /^NG (Sans|Mono)( Bold| Italic)?$/);
-    assert.equal(n.get(6), out);
-    assert.match(n.get(0), /Red Hat/, 'copyright notice kept');
-    assert.match(n.get(13), /SIL Open Font License/, 'licence record kept');
-    assert.ok(t.has('GPOS') && t.has('glyf'), 'outlines and kerning kept');
+    assert.match(n.get(1), out.startsWith('GeistMono') ? /^Geist Mono/ : /^Figtree/);
+    assert.match(n.get(0), /Copyright/, 'copyright notice kept');
+    assert.match(n.get(13) || '', /SIL Open Font License/, 'licence record kept');
+    assert.ok(t.has('glyf'), 'outlines kept');
+    if (out.endsWith('-Var')) assert.ok(t.has('fvar') && t.has('gvar'), 'variable weight axis kept');
   });
 }

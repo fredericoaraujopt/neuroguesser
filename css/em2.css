@@ -34,7 +34,7 @@
 .em2-status {
   position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-50%);
   text-align: center; pointer-events: none;
-  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); text-transform: uppercase; color: var(--state-warn);
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--state-warn);
 }
 
 /* ---------- the chrome around it (view.js) ---------- */
@@ -201,7 +201,7 @@
   position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 2px;
   text-align: center;
-  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-mono); text-transform: uppercase; color: var(--ink-muted);
+  font: 400 var(--fs-micro)/var(--lh-micro) var(--font-sans); color: var(--ink-muted);
 }
 .em2-update .btn-text { text-transform: none; font-family: var(--font-sans); }
 
