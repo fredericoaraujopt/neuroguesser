@@ -2,8 +2,10 @@
 // Settings → Haptics is off.
 //
 //  - Android / Chrome: navigator.vibrate patterns.
-//  - iOS Safari 18+ (no Vibration API): toggling a hidden <input type="checkbox" switch> gives one system
-//    haptic tick; label.click() toggles it, so a pattern becomes 1–3 ticks ~80 ms apart.
+//  - iOS Safari 18+ (no Vibration API): toggling an <input type="checkbox" switch> gives one system haptic tick.
+//    Each tick builds a fresh <label><input switch></label> (display:none, in <head>), clicks the label and removes
+//    it, as the widely used ios-haptics approach does; a pattern becomes 1–3 ticks ~80 ms apart. (v0.7.2: the earlier
+//    single off-screen switch in <body> gave no tick on an installed iOS 27 app; dev/haptics.html compares both.)
 //  iOS only fires inside a user gesture: call haptic('selection') synchronously in the tap handler and the
 //  result haptic as soon as the response arrives.
 import { store } from '../store.js';
@@ -22,7 +24,7 @@ export const PATTERNS = Object.freeze({
 export const TICKS = Object.freeze({ selection: 1, light: 1, success: 2, error: 3, celebrate: 3 });
 export const TICK_GAP_MS = 80;
 
-let iosSwitch = null;
+let legacySwitch = null;
 
 function canVibrate() {
   return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
@@ -41,30 +43,46 @@ export function hapticsSupport() {
   return 'none';
 }
 
-function ensureSwitch() {
-  if (iosSwitch) return iosSwitch;
-  const id = 'ng-haptic-switch';
+/** One iOS tick: a fresh hidden switch inside its label, clicked and removed (the default). */
+function freshTick() {
+  const label = document.createElement('label');
+  label.setAttribute('aria-hidden', 'true');
+  label.style.display = 'none';
   const input = document.createElement('input');
   input.type = 'checkbox';
   input.setAttribute('switch', '');
-  input.id = id;
   input.tabIndex = -1;
-  input.setAttribute('aria-hidden', 'true');
-  const label = document.createElement('label');
-  label.htmlFor = id;
-  label.setAttribute('aria-hidden', 'true');
-  const box = document.createElement('div');
-  box.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;';
-  box.append(input, label);
-  document.body.appendChild(box);
-  iosSwitch = { input, label };
-  return iosSwitch;
+  label.append(input);
+  const host = document.head || document.body;
+  host.appendChild(label);
+  try { label.click(); } finally { if (label.parentNode) label.parentNode.removeChild(label); }
 }
 
-function tick() {
-  const { label } = ensureSwitch();
+/** The pre-0.7.2 method (one persistent off-screen switch), kept for dev/haptics.html comparisons. */
+function legacyTick() {
+  if (!legacySwitch) {
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.setAttribute('switch', '');
+    input.id = 'ng-haptic-switch';
+    input.tabIndex = -1;
+    input.setAttribute('aria-hidden', 'true');
+    const label = document.createElement('label');
+    label.htmlFor = input.id;
+    label.setAttribute('aria-hidden', 'true');
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;';
+    box.append(input, label);
+    document.body.appendChild(box);
+    legacySwitch = { label };
+  }
+  legacySwitch.label.click();
+}
+
+/** One iOS haptic tick; method 'fresh' (default) or 'legacy'. Keeps keyboard focus where it was. */
+export function iosTick(method = 'fresh') {
   const active = document.activeElement;
-  label.click();
+  if (method === 'legacy') legacyTick(); else freshTick();
   if (active && active !== document.activeElement && typeof active.focus === 'function') active.focus({ preventScroll: true });
 }
 
@@ -81,8 +99,8 @@ export function haptic(kind = 'selection') {
     if (mode === 'vibrate') return navigator.vibrate(PATTERNS[kind]) !== false;
     if (mode === 'ios-switch') {
       const n = TICKS[kind] || 1;
-      tick();
-      for (let i = 1; i < n; i++) setTimeout(() => { try { tick(); } catch (_) { /* ignore */ } }, i * TICK_GAP_MS);
+      iosTick();
+      for (let i = 1; i < n; i++) setTimeout(() => { try { iosTick(); } catch (_) { /* ignore */ } }, i * TICK_GAP_MS);
       return true;
     }
   } catch (_) { /* best effort */ }

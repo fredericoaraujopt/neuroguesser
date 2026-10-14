@@ -26,15 +26,20 @@
   <label class="big">Tap me <input type="checkbox" switch></label>
 </section>
 <section>
-  <p>2. These use the app's own haptics code (a hidden switch clicked from your tap). If 1 ticks but these don't, the app's method no longer works on this iOS version.</p>
+  <p>2. The app's method (v0.7.2+): a fresh hidden switch per tick. If 1 ticks but these don't, tell us.</p>
   <button type="button" id="one">One tick (selection)</button>
   <button type="button" id="three">Three ticks (celebrate)</button>
 </section>
+<section>
+  <p>3. The old method (up to v0.7.1): one hidden switch kept off-screen. For comparison only.</p>
+  <button type="button" id="legacy">One tick, old method</button>
+</section>
 <pre id="info"></pre>
 <script type="module">
-  import { haptic, hapticsSupport } from '../js/fx/haptics.js';
+  import { haptic, hapticsSupport, iosTick } from '../js/fx/haptics.js';
   document.getElementById('one').addEventListener('click', () => haptic('selection'));
   document.getElementById('three').addEventListener('click', () => haptic('celebrate'));
+  document.getElementById('legacy').addEventListener('click', () => iosTick('legacy'));
   document.getElementById('info').textContent = [
     `support: ${hapticsSupport()}`,
     `navigator.vibrate: ${typeof navigator.vibrate}`,

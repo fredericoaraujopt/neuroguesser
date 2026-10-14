@@ -498,7 +498,7 @@ function About() {
   </div>
   <div class="card st-card">
     <span class="t-body t-soft">Five real neurons a day from public connectomes: name each cell from its 3D shape, then
-      guess how its electron microscopy was imaged.</span>
+      guess which electron microscopy method imaged it.</span>
     <${Button} variant="outline" block onClick=${() => openOnboarding({ replay: true })}>How to play</${Button}>
     <span class="t-micro t-muted">No accounts and no analytics: an anonymous ID kept on this phone is the only identifier.</span>
   </div>

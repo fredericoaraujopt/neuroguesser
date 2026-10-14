@@ -63,31 +63,38 @@ test('haptics: no Vibration API and not iOS → none (desktop Safari, Node)', ()
   });
 });
 
-test('haptics: iOS (no Vibration API) toggles a hidden <input type=checkbox switch> via its label, 1–3 ticks', async () => {
+test('haptics: iOS (no Vibration API) clicks a fresh hidden <label><input switch></label> per tick, 1–3 ticks', async () => {
   store.set(initialState());
   const made = [];
   let clicks = 0;
+  let attached = 0;
   const el = (tag) => {
-    const node = { tag, attrs: {}, style: {}, children: [], setAttribute(k, v) { this.attrs[k] = v; }, append(...c) { this.children.push(...c); }, focus() {} };
-    if (tag === 'label') node.click = () => { clicks++; };
+    const node = { tag, attrs: {}, style: {}, children: [], parentNode: null, setAttribute(k, v) { this.attrs[k] = v; },
+      append(...c) { this.children.push(...c); }, focus() {} };
+    if (tag === 'label') node.click = () => { clicks++; assert.ok(node.parentNode, 'clicked while attached'); };
     made.push(node);
     return node;
   };
-  const doc = { createElement: el, body: { appendChild() {} }, activeElement: null };
+  const host = { appendChild(n) { n.parentNode = host; attached++; }, removeChild(n) { n.parentNode = null; attached--; } };
+  const doc = { createElement: el, head: host, body: host, activeElement: null };
   const nav = { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Safari/604.1', platform: 'iPhone', maxTouchPoints: 5 };
   await withGlobals({ navigator: nav, document: doc }, async () => {
     assert.equal(hapticsSupport(), 'ios-switch');
     assert.equal(haptic('selection'), true);
     assert.equal(clicks, 1, 'first tick is synchronous (inside the user gesture)');
+    assert.equal(attached, 0, 'the switch is removed after its tick');
+    const label = made.find((n) => n.tag === 'label');
     const input = made.find((n) => n.tag === 'input');
     assert.equal(input.type, 'checkbox');
     assert.ok('switch' in input.attrs, 'switch attribute');
-    assert.equal(made.find((n) => n.tag === 'label').htmlFor, input.id);
+    assert.ok(label.children.includes(input), 'the switch sits inside its label');
+    assert.equal(label.style.display, 'none');
     clicks = 0;
     haptic('error');
     assert.equal(clicks, 1);
     await sleep(TICK_GAP_MS * 3 + 40);
     assert.equal(clicks, TICKS.error);
+    assert.equal(attached, 0);
     store.update('session', { settings: { haptics: false, celebrations: true } });
     clicks = 0;
     assert.equal(haptic('celebrate'), false);

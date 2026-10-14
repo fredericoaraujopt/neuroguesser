@@ -19,7 +19,7 @@
  *
  * VERSION must equal version.js (tests/shell.test.js checks it; tests/sw.test.js tests the behaviour).
  */
-const VERSION = '0.7.1';
+const VERSION = '0.7.2';
 const SHELL_CACHE = `ng-shell-${VERSION}`;
 const DAY_CACHE = 'ng-day-v1';
 const ASSET_CACHE = 'ng-asset-v1';

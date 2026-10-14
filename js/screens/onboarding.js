@@ -87,7 +87,7 @@ const PANELS = [
   {
     over: 'Step 2 · the microscope',
     title: 'How was it imaged?',
-    body: 'Once the type is settled, the same cell appears in its electron microscopy. Pick the imaging method for a bonus.',
+    body: 'Once the type is settled, you see the same cell in the electron micrographs it was reconstructed from. Pick the imaging method for a bonus.',
     more: 'One try. The side view (XZ) shows how thick the sections were, which is the best hint.',
     Figure: MethodFigure,
   },
