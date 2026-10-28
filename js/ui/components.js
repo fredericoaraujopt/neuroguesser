@@ -2,10 +2,21 @@
 import { useEffect, useLayoutEffect, useState } from 'preact/hooks';
 import { html, cx } from './html.js';
 import { useStore, store } from '../store.js';
-import { haptic } from '../fx/haptics.js';
+import { haptic, hapticsSupport, onTapTick } from '../fx/haptics.js';
 import { niceScale } from '../viewer/scalebar.js';
 import { fmtUm, countdown as fmtCountdown } from '../format.js';
 import { now as serverNow, msUntil } from '../time.js';
+
+/**
+ * iPhone haptic tick for a real tap (iOS 26.5+ ignores script-made ticks; js/fx/haptics.js): an invisible native
+ * switch laid over its parent control (css/app.css .tap-tick). Put it last inside a tappable button or link. Renders
+ * nothing off iOS or when Settings → Haptics is off; keyboard and screen-reader use goes to the control itself.
+ */
+export function Tick() {
+  const on = useStore((s) => !s.session.settings || s.session.settings.haptics !== false);
+  if (!on || hapticsSupport() !== 'ios-switch') return null;
+  return html`<input type="checkbox" switch class="tap-tick" tabindex="-1" aria-hidden="true" onClick=${onTapTick} />`;
+}
 
 /**
  * <Button variant="primary|outline|link-outline|text" block size="sm" haptic="selection">Label</Button>
@@ -28,23 +39,23 @@ export function Button({ variant = 'primary', block = false, size, haptic: hapti
     if (onClick) onClick(e);
   };
   if (href) {
-    return html`<a class=${cls} href=${href} target="_blank" rel="noopener noreferrer" onClick=${click} ...${rest}>${children}</a>`;
+    return html`<a class=${cls} href=${href} target="_blank" rel="noopener noreferrer" onClick=${click} ...${rest}>${children}<${Tick} /></a>`;
   }
-  return html`<button type="button" class=${cls} onClick=${click} ...${rest}>${children}</button>`;
+  return html`<button type="button" class=${cls} onClick=${click} ...${rest}>${children}<${Tick} /></button>`;
 }
 
 /** 44 × 44 glyph button with no fill (⤢ ✕ + − ⟲ ✥ ▲ ▼ ↗). Always give it an aria-label. */
 export function GhostButton({ label, size, children, onClick, haptic: hapticKind, class: klass, ...rest }) {
   const click = (e) => { if (hapticKind) haptic(hapticKind); if (onClick) onClick(e); };
   return html`<button type="button" class=${cx('btn-ghost', size === 'lg' && 'is-lg', size === 'sm' && 'is-sm', klass)}
-    aria-label=${label} title=${label} onClick=${click} ...${rest}>${children}</button>`;
+    aria-label=${label} title=${label} onClick=${click} ...${rest}>${children}<${Tick} /></button>`;
 }
 
 /** Filter/scope chip (radius 4, 36 px). variant="lg" → 44 px method chip (radius 8). */
 export function Chip({ active = false, variant, onClick, children, class: klass, ...rest }) {
   const click = (e) => { haptic('selection'); if (onClick) onClick(e); };
   return html`<button type="button" class=${cx(variant === 'lg' ? 'chip-lg' : 'chip', active && 'is-active', klass)}
-    aria-pressed=${active ? 'true' : 'false'} onClick=${click} ...${rest}>${children}</button>`;
+    aria-pressed=${active ? 'true' : 'false'} onClick=${click} ...${rest}>${children}<${Tick} /></button>`;
 }
 
 /** Segmented control: options [{ id, label }], value, onChange(id). */
@@ -52,7 +63,7 @@ export function Segmented({ options, value, onChange, tall = false, label, class
   return html`<div class=${cx('segmented', tall && 'is-tall', klass)} role="tablist" aria-label=${label}>
     ${options.map((o) => html`<button type="button" role="tab" key=${o.id} aria-selected=${o.id === value ? 'true' : 'false'}
       class=${o.id === value ? 'is-active' : ''}
-      onClick=${() => { if (o.id !== value) { haptic('selection'); onChange && onChange(o.id); } }}>${o.label}</button>`)}
+      onClick=${() => { if (o.id !== value) { haptic('selection'); onChange && onChange(o.id); } }}>${o.label}<${Tick} /></button>`)}
   </div>`;
 }
 
@@ -105,7 +116,7 @@ export function Toggle({ checked, onChange, label, hint }) {
   return html`<button type="button" class="switch" role="switch" aria-checked=${checked ? 'true' : 'false'}
     onClick=${() => { haptic('selection'); onChange && onChange(!checked); }}>
     <span class="stack-4"><span>${label}</span>${hint ? html`<span class="t-micro t-muted">${hint}</span>` : null}</span>
-    <span class="switch-state">${checked ? 'On' : 'Off'}<span class="switch-track"></span></span>
+    <span class="switch-state">${checked ? 'On' : 'Off'}<span class="switch-track"></span></span><${Tick} />
   </button>`;
 }
 
@@ -155,9 +166,9 @@ export function TabBar({ active, dueCount = 0 }) {
     ${tabs.map((t) => html`<a key=${t.id} href=${t.href} class=${cx('tab', active === t.id && 'is-active')}
       aria-current=${active === t.id ? 'page' : null}
       aria-label=${t.badge ? `${t.label}, ${dueCount} due for review` : t.label}
-      onClick=${() => { setMore(false); haptic('selection'); }}><span>${t.label}${t.badge ? html`<span class="tab-badge">${t.badge}</span>` : null}</span></a>`)}
+      onClick=${() => { setMore(false); haptic('selection'); }}><span>${t.label}${t.badge ? html`<span class="tab-badge">${t.badge}</span>` : null}</span><${Tick} /></a>`)}
     <button type="button" class=${cx('tab', 'tab-more', more && 'is-open')} aria-haspopup="menu" aria-expanded=${more ? 'true' : 'false'}
-      aria-label="More: feedback, share, settings" onClick=${() => { haptic('selection'); setMore(!more); }}><span>⋯ More</span></button>
+      aria-label="More: feedback, share, settings" onClick=${() => { haptic('selection'); setMore(!more); }}><span>⋯ More</span><${Tick} /></button>
     ${more ? html`<${MoreMenu} onClose=${() => setMore(false)} />` : null}
   </nav>`;
 }
@@ -182,10 +193,10 @@ export function MoreMenu({ onClose }) {
   return html`<div class="more-scrim" onClick=${onClose}></div>
     <div class="more-menu" role="menu" aria-label="More">
       <button type="button" role="menuitem" class="more-item"
-        onClick=${pick(() => import('../feedback.js').then((m) => m.openFeedback({})).catch(() => {}))}>Feedback</button>
+        onClick=${pick(() => import('../feedback.js').then((m) => m.openFeedback({})).catch(() => {}))}>Feedback<${Tick} /></button>
       ${share ? html`<button type="button" role="menuitem" class="more-item"
-        onClick=${pick(() => store.update('ui', { sheet: { id: 'share', props: {} } }))}>Share result</button>` : null}
-      <a role="menuitem" class="more-item" href="#/settings" onClick=${() => { haptic('selection'); onClose(); }}>Settings</a>
+        onClick=${pick(() => store.update('ui', { sheet: { id: 'share', props: {} } }))}>Share result<${Tick} /></button>` : null}
+      <a role="menuitem" class="more-item" href="#/settings" onClick=${() => { haptic('selection'); onClose(); }}>Settings<${Tick} /></a>
     </div>`;
 }
 

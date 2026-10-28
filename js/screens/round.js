@@ -12,7 +12,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { html, cx, loadCss } from '../ui/html.js';
 import { store, useStore, openSheet, showToast } from '../store.js';
-import { Button, GhostButton, Legend, ScaleBar, OfflineChip } from '../ui/components.js';
+import { Button, GhostButton, Legend, ScaleBar, OfflineChip, Tick } from '../ui/components.js';
 import { MESH_STEPS } from '../viewer/scalebar.js';
 import { Sheet } from '../ui/sheet.js';
 import { TodayProgress } from '../ui/day-progress.js';
@@ -491,7 +491,7 @@ function OptionGrid({ round, states, pick, shakeId, beat, disabled, onPick, card
             ? html`<span ref=${(el) => { markRefs.current[o.id] = el; }}></span> answer`
             : MARKS[st]}</span></span>
         <span class="option-label" aria-hidden="true"><span class=${cx('round-strike', (st === 'out' || st === 'wrong') && 'is-struck')}>${o.label}</span></span>
-        <span class="option-sub" aria-hidden="true">${o.sub}</span>
+        <span class="option-sub" aria-hidden="true">${o.sub}</span><${Tick} />
       </button>`;
     })}
   </div>`;
@@ -525,7 +525,7 @@ function MethodChips({ options, mpick, result, disabled, onPick, chipRefs }) {
         aria-label=${`${name}${mark ? `, ${mark.replace(/^[●✓✕] /, '')}` : ''}. ${METHOD_BLURBS[id] || ''}`}
         onClick=${() => onPick(id)}>
         <span class="method-chip-head" aria-hidden="true"><span class="method-chip-name">${name}</span><span class="option-mark">${mark}</span></span>
-        ${METHOD_BLURBS[id] ? html`<span class="method-chip-blurb" aria-hidden="true">${METHOD_BLURBS[id]}</span>` : null}
+        ${METHOD_BLURBS[id] ? html`<span class="method-chip-blurb" aria-hidden="true">${METHOD_BLURBS[id]}</span>` : null}<${Tick} />
       </button>`;
     })}
   </div>`;

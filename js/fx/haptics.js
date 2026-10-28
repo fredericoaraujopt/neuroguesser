@@ -6,6 +6,11 @@
 //    Each tick builds a fresh <label><input switch></label> (display:none, in <head>), clicks the label and removes
 //    it, as the widely used ios-haptics approach does; a pattern becomes 1–3 ticks ~80 ms apart. (v0.7.2: the earlier
 //    single off-screen switch in <body> gave no tick on an installed iOS 27 app; dev/haptics.html compares both.)
+//  - iOS 26.5+ treats those script clicks as untrusted and gives no tick at all; only a real finger tap that toggles a
+//    switch does. So tappable controls carry <Tick /> (ui/components.js): an invisible native switch laid over the
+//    control. The real tap toggles it (one tick), onTapTick stops that click and re-sends it to the control, whose
+//    own haptic() then skips its first, duplicate tick. On 26.5+ result haptics after a response and multi-tick
+//    patterns give nothing; on older iOS they still tick as before.
 //  iOS only fires inside a user gesture: call haptic('selection') synchronously in the tap handler and the
 //  result haptic as soon as the response arrives.
 import { store } from '../store.js';
@@ -25,6 +30,9 @@ export const TICKS = Object.freeze({ selection: 1, light: 1, success: 2, error: 
 export const TICK_GAP_MS = 80;
 
 let legacySwitch = null;
+let realTickAt = -Infinity;
+/** A tap on a <Tick /> switch within this many ms counts as the first tick of the control's own haptic(). */
+export const REAL_TICK_MS = 300;
 
 function canVibrate() {
   return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
@@ -86,6 +94,21 @@ export function iosTick(method = 'fresh') {
   if (active && active !== document.activeElement && typeof active.focus === 'function') active.focus({ preventScroll: true });
 }
 
+/**
+ * Click handler of the <Tick /> overlay switch: the real tap already toggled it (iOS gives the tick), so stop that
+ * click and re-send it to the control underneath, which then runs its usual handlers (an <a> follows its href).
+ */
+export function onTapTick(e) {
+  e.stopPropagation();
+  realTickAt = Date.now();
+  const el = e.currentTarget;
+  const host = el && el.parentElement;
+  if (!host) return;
+  // focus goes where a tap on the control itself would put it (sheets hand focus back to their opener)
+  if (typeof document !== 'undefined' && document.activeElement === el && typeof host.focus === 'function') host.focus({ preventScroll: true });
+  if (typeof host.click === 'function') host.click();
+}
+
 function enabled() {
   const s = store.get().session.settings;
   return !s || s.haptics !== false;
@@ -99,7 +122,8 @@ export function haptic(kind = 'selection') {
     if (mode === 'vibrate') return navigator.vibrate(PATTERNS[kind]) !== false;
     if (mode === 'ios-switch') {
       const n = TICKS[kind] || 1;
-      iosTick();
+      if (Date.now() - realTickAt > REAL_TICK_MS) iosTick();
+      realTickAt = -Infinity;
       for (let i = 1; i < n; i++) setTimeout(() => { try { iosTick(); } catch (_) { /* ignore */ } }, i * TICK_GAP_MS);
       return true;
     }

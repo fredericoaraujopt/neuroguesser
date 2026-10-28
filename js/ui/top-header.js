@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { html, cx } from './html.js';
 import { haptic } from '../fx/haptics.js';
+import { Tick } from './components.js';
 import { TodayProgress } from './day-progress.js';
 import { LevelChip, levelChipLabel } from './xp-bar.js'; // v1.3 (§3.4 item 2): the level chip on Profile
 
@@ -48,7 +49,7 @@ export function HeaderBar({ active, dueCount = 0, xp = null }) {
       ${items.map((t) => html`<a key=${t.id} href=${t.href} class=${cx('topbar-link', active === t.id && 'is-active')}
         aria-current=${active === t.id ? 'page' : null}
         aria-label=${t.badge ? `${t.label}, ${dueCount} due for review` : t.id === 'profile' && level ? `${t.label}, ${levelChipLabel(xp)}` : t.label}
-        onClick=${() => haptic('selection')}><span>${t.label}${t.badge ? html`<span class="tab-badge">${t.badge}</span>` : null}${t.id === 'profile' && level ? html`<${LevelChip} xp=${xp} />` : null}</span></a>`)}
+        onClick=${() => haptic('selection')}><span>${t.label}${t.badge ? html`<span class="tab-badge">${t.badge}</span>` : null}${t.id === 'profile' && level ? html`<${LevelChip} xp=${xp} />` : null}</span><${Tick} /></a>`)}
     </nav>
   </header>`;
 }

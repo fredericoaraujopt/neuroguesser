@@ -4,7 +4,7 @@ import './_importmap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const { haptic, hapticsSupport, PATTERNS, TICKS, TICK_GAP_MS } = await import('../js/fx/haptics.js');
+const { haptic, hapticsSupport, onTapTick, PATTERNS, TICKS, TICK_GAP_MS } = await import('../js/fx/haptics.js');
 const fx = await import('../js/fx/celebrate.js');
 const { store, initialState } = await import('../js/store.js');
 const idb = await import('../js/idb.js');
@@ -103,6 +103,32 @@ test('haptics: iOS (no Vibration API) clicks a fresh hidden <label><input switch
   // an iPad reports itself as a Mac with touch
   withGlobals({ navigator: { userAgent: 'Mozilla/5.0 (Macintosh)', platform: 'MacIntel', maxTouchPoints: 5 }, document: {} }, () => {
     assert.equal(hapticsSupport(), 'ios-switch');
+  });
+  store.set(initialState());
+});
+
+test('haptics: a real tap on the <Tick /> switch is re-sent to its control, whose own haptic() skips the duplicate tick', async () => {
+  store.set(initialState());
+  let clicks = 0;
+  const host = { appendChild(n) { n.parentNode = host; }, removeChild(n) { n.parentNode = null; } };
+  const doc = { head: host, body: host, activeElement: null, createElement: (tag) => ({ tag, attrs: {}, style: {}, children: [],
+    setAttribute(k, v) { this.attrs[k] = v; }, append(...c) { this.children.push(...c); }, click() { if (tag === 'label') clicks++; } }) };
+  const nav = { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) Version/26.6 Safari/604.1', platform: 'iPhone', maxTouchPoints: 5 };
+  await withGlobals({ navigator: nav, document: doc }, async () => {
+    let reached = 0;
+    let stopped = false;
+    const control = { click() { reached++; haptic('selection'); } };
+    onTapTick({ currentTarget: { parentElement: control }, stopPropagation() { stopped = true; } });
+    assert.equal(stopped, true, 'the switch click never bubbles (the control would run twice)');
+    assert.equal(reached, 1, 'the control receives the tap');
+    assert.equal(clicks, 0, 'no script tick on top of the real one');
+    haptic('selection');
+    assert.equal(clicks, 1, 'a later haptic() ticks as usual');
+    clicks = 0;
+    onTapTick({ currentTarget: { parentElement: { click() { haptic('celebrate'); } } }, stopPropagation() {} });
+    assert.equal(clicks, 0);
+    await sleep(TICK_GAP_MS * 3 + 40);
+    assert.equal(clicks, TICKS.celebrate - 1, 'the rest of a pattern still ticks (older iOS)');
   });
   store.set(initialState());
 });

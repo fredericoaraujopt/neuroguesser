@@ -16,6 +16,10 @@
   button, label.big { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 56px; margin: 0 0 12px;
     border: 1px solid #3a404c; border-radius: 8px; background: #232833; color: #e8eaee; font: inherit; }
   input[switch] { transform: scale(1.4); }
+  .host { position: relative; }
+  .tap-tick { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; z-index: 1; }
+  .tap-label { position: absolute; inset: 0; z-index: 1; }
+  #log { min-height: 1.45em; color: #e8eaee; }
   pre { white-space: pre-wrap; font: 13px/1.4 ui-monospace, monospace; color: #b8bdc7; background: #1d2129; padding: 12px; border-radius: 8px; }
 </style>
 </head>
@@ -26,7 +30,7 @@
   <label class="big">Tap me <input type="checkbox" switch></label>
 </section>
 <section>
-  <p>2. The app's method (v0.7.2+): a fresh hidden switch per tick. If 1 ticks but these don't, tell us.</p>
+  <p>2. The v0.7.2 method: a fresh hidden switch per tick. No tick on iOS 26.5 and later.</p>
   <button type="button" id="one">One tick (selection)</button>
   <button type="button" id="three">Three ticks (celebrate)</button>
 </section>
@@ -34,9 +38,21 @@
   <p>3. The old method (up to v0.7.1): one hidden switch kept off-screen. For comparison only.</p>
   <button type="button" id="legacy">One tick, old method</button>
 </section>
+<section>
+  <p>4. The app's method from v0.7.3: an invisible switch over each button takes your real tap (iOS 26.5 and later ignore the script clicks used in 2 and 3). Each button should tick once.</p>
+  <button type="button" class="host" id="overlay">Tap me (invisible switch)<input type="checkbox" switch class="tap-tick" tabindex="-1" aria-hidden="true"></button>
+  <button type="button" class="host" id="overlay-label">Tap me (invisible label)<label class="tap-label" aria-hidden="true"><input type="checkbox" switch tabindex="-1" style="display:none"></label></button>
+  <p id="log" role="status"></p>
+</section>
 <pre id="info"></pre>
 <script type="module">
-  import { haptic, hapticsSupport, iosTick } from '../js/fx/haptics.js';
+  import { haptic, hapticsSupport, iosTick, onTapTick } from '../js/fx/haptics.js';
+  let taps = 0;
+  const log = (what) => { document.getElementById('log').textContent = `Button reached: ${what} (${++taps})`; };
+  document.querySelector('#overlay .tap-tick').addEventListener('click', onTapTick);
+  document.querySelector('#overlay-label input').addEventListener('click', (e) => e.stopPropagation());
+  document.getElementById('overlay').addEventListener('click', () => log('invisible switch'));
+  document.getElementById('overlay-label').addEventListener('click', (e) => { if (e.target.tagName === 'LABEL') log('invisible label'); });
   document.getElementById('one').addEventListener('click', () => haptic('selection'));
   document.getElementById('three').addEventListener('click', () => haptic('celebrate'));
   document.getElementById('legacy').addEventListener('click', () => iosTick('legacy'));
